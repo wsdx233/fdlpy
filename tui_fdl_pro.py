@@ -3,6 +3,7 @@ import sys
 import argparse
 import datetime
 import threading
+import fnmatch  # 新增导入
 from typing import List, Dict, Optional, Tuple
 
 import blessed
@@ -53,9 +54,10 @@ class ProgressTracker:
 
 # --- TUI 核心应用类 ---
 class FdlTuiApp:
-    def __init__(self, root_dir: str):
+    def __init__(self, root_dir: str, exclude_patterns: Optional[List[str]] = None):
         self.term = blessed.Terminal()
         self.root_dir = os.path.abspath(root_dir)
+        self.exclude_patterns = exclude_patterns or [] # 新增
         
         self.mode = 'loading'
         self.sort_by = 'name'
@@ -84,9 +86,12 @@ class FdlTuiApp:
         self.preview_node = None
 
     def _build_tree_worker(self):
+        # 估算总数 (可能会因排除而略有不准, 但不影响功能)
         total_files = sum(len(files) for _, _, files in os.walk(self.root_dir))
         self.progress.set_total(total_files)
+        
         self.tree_result, self.total_encodable_count, self.total_encodable_size = self._build_tree(self.root_dir)
+        
         self.selected_count = self.total_encodable_count
         self.selected_size = self.total_encodable_size
 
@@ -104,6 +109,11 @@ class FdlTuiApp:
             try:
                 entries = sorted(os.scandir(path), key=lambda e: (e.is_file(), e.name.lower()))
                 for entry in entries:
+                    # --- 新增: 排除逻辑 ---
+                    # 仅在根目录(depth=0)的子节点上应用排除规则
+                    if depth == 0 and any(fnmatch.fnmatch(entry.name, p) for p in self.exclude_patterns):
+                        continue # 跳过此文件/文件夹
+
                     child_node, child_count, child_size = self._build_tree(entry.path, depth + 1)
                     node["children"].append(child_node)
                     node_encodable_count += child_count
@@ -129,20 +139,14 @@ class FdlTuiApp:
         if not is_selectable: return
         target_state = select_state if select_state is not None else not node["selected"]
         
-        # 递归地检查实际发生变化的总量
         delta_count, delta_size = self._calculate_selection_delta(node, target_state)
-        
-        # 应用选择
         self._apply_selection_state(node, target_state)
 
         self.selected_count += delta_count
         self.selected_size += delta_size
 
     def _calculate_selection_delta(self, node: Dict, target_state: bool) -> Tuple[int, int]:
-        """递归计算如果状态改变, count 和 size 的总变化量"""
-        if node['selected'] == target_state:
-            return 0, 0 # 状态未变, 无变化
-        
+        if node['selected'] == target_state: return 0, 0
         is_selectable = node['type'] == 'dir' or is_encodable(node['path'])
         if not is_selectable: return 0, 0
 
@@ -150,18 +154,14 @@ class FdlTuiApp:
             change = 1 if target_state else -1
             return change, change * node['size']
 
-        # 对于目录, 聚合所有子项的变化
-        total_delta_count = 0
-        total_delta_size = 0
+        total_delta_count, total_delta_size = 0, 0
         for child in node['children']:
             d_count, d_size = self._calculate_selection_delta(child, target_state)
             total_delta_count += d_count
             total_delta_size += d_size
-            
         return total_delta_count, total_delta_size
     
     def _apply_selection_state(self, node: Dict, state: bool):
-        """仅递归应用选择状态, 不返回任何值"""
         is_selectable = node['type'] == 'dir' or is_encodable(node['path'])
         if is_selectable and node['selected'] != state:
             node['selected'] = state
@@ -170,10 +170,8 @@ class FdlTuiApp:
 
     def _sort_children(self, node: Dict):
         if node["type"] == 'dir' and node["children"]:
-            if self.sort_by == 'name':
-                node["children"].sort(key=lambda n: (n['type'] == 'file', n['name'].lower()))
-            elif self.sort_by == 'size':
-                node["children"].sort(key=lambda n: (n['type'] == 'file', -n['size'], n['name'].lower()))
+            key_func = (lambda n: (n['type'] == 'file', -n['size'], n['name'].lower())) if self.sort_by == 'size' else (lambda n: (n['type'] == 'file', n['name'].lower()))
+            node["children"].sort(key=key_func)
             for child in node["children"]: self._sort_children(child)
     
     def _update_flat_list(self):
@@ -200,12 +198,11 @@ class FdlTuiApp:
     def _draw_loading_screen(self):
         count, total, path = self.progress.get_state()
         lines = [""] * self.term.height
-        
         title = "Scanning project..."
         lines[self.term.height // 2 - 2] = self.term.center(self.term.bold(title))
         
         if total > 0:
-            percentage = count / total if total > 0 else 0
+            percentage = min(1.0, count / total) if total > 0 else 0
             bar_width = self.term.width - 20
             filled_len = int(bar_width * percentage)
             bar = '█' * filled_len + '─' * (bar_width - filled_len)
@@ -215,46 +212,36 @@ class FdlTuiApp:
         display_path = path
         if len(path) > self.term.width - 4:
             display_path = "..." + path[-(self.term.width - 7):]
-        
-        # --- FIX: 使用安全的方式应用 dim ---
         dimmed_path = f"{self.term.dim}{display_path}{self.term.normal}"
         lines[self.term.height // 2 + 2] = self.term.center(dimmed_path)
-        
         self._render(lines)
         
     def _draw_browse_mode(self):
         lines = []
         height = self.term.height
         sort_mode_str = f"Sort: {self.sort_by.capitalize()}"
-        header1 = (
-            f"FDL Exporter | "
-            f"Selected: {format_size(self.selected_size)} ({self.selected_count}) | "
-            f"Total: {format_size(self.total_encodable_size)} ({self.total_encodable_count}) | "
-            f"{sort_mode_str}"
-        )
+        header1 = (f"FDL Exporter | Selected: {format_size(self.selected_size)} ({self.selected_count}) | "
+                   f"Total: {format_size(self.total_encodable_size)} ({self.total_encodable_count}) | {sort_mode_str}")
         lines.append(self.term.bold_black_on_lightgray(header1.ljust(self.term.width)))
+        
         if self.cursor_pos < self.top_line: self.top_line = self.cursor_pos
         if self.cursor_pos >= self.top_line + height - 2: self.top_line = self.cursor_pos - height + 3
+        
         visible_items = self.flat_list[self.top_line : self.top_line + height - 2]
         for i, node in enumerate(visible_items):
             line_idx = self.top_line + i
-            indent, sel_char = "  " * node["depth"], ""
-            if node["type"] == "file" and not is_encodable(node["path"]):
-                sel_char = f"{self.term.dim}[ ]{self.term.normal}"
-            else:
-                sel_char = self.term.green("[✓]") if node["selected"] else "[ ]"
+            sel_char = f"{self.term.dim}[ ]{self.term.normal}" if node["type"] == "file" and not is_encodable(node["path"]) else (self.term.green("[✓]") if node["selected"] else "[ ]")
+            
+            # --- FIX: 交换展开/折叠图标 ---
             icon = "▾" if node.get("expanded") else "▸" if node["type"] == "dir" else " "
+            
             display_name = f"{icon} {node['name']}{'/' if node['type'] == 'dir' else ''}"
             size_str = f"({format_size(node['size'])})" if node['size'] > 0 else ""
-            line_str = f"{indent}{sel_char} {display_name}"
+            line_str = f"{'  ' * node['depth']}{sel_char} {display_name}"
             
             stripped_line_len = len(self.term.strip_seqs(line_str))
-            space_for_size = self.term.width - stripped_line_len - 1
-            dimmed_size = f"{self.term.dim}{size_str}{self.term.normal}"
-            
-            # 动态计算右对齐所需的padding
-            padding = space_for_size + len(dimmed_size) - len(size_str)
-            line = f"{line_str}{dimmed_size:>{padding}}"
+            padding = self.term.width - stripped_line_len - len(size_str)
+            line = f"{line_str}{' ' * padding}{self.term.dim}{size_str}{self.term.normal}"
             
             lines.append(self.term.black_on_green(line) if line_idx == self.cursor_pos else line)
 
@@ -273,16 +260,14 @@ class FdlTuiApp:
         content_h = p_h - 4
         lines = list(self.last_drawn_lines)
         lines[p_y] = self.term.move(p_y, p_x) + '╭' + '─' * (p_w - 2) + '╮'
-        for i in range(p_h - 2):
-            lines[p_y + 1 + i] = self.term.move(p_y + 1 + i, p_x) + '│' + ' ' * (p_w - 2) + '│'
+        for i in range(p_h - 2): lines[p_y + 1 + i] = self.term.move(p_y + 1 + i, p_x) + '│' + ' ' * (p_w - 2) + '│'
         lines[p_y + p_h - 1] = self.term.move(p_y + p_h - 1, p_x) + '╰' + '─' * (p_w - 2) + '╯'
         title = f" Preview: {os.path.basename(self.preview_node['path'])} ({format_size(self.preview_node['size'])}) "
         lines[p_y] = self.term.move(p_y, p_x + 1) + self.term.bold(title)
         for i in range(content_h):
             content_idx = self.preview_scroll + i
             if content_idx < len(self.preview_content):
-                content_line = self.preview_content[content_idx].replace('\t', '    ')[:p_w - 4]
-                lines[p_y + 2 + i] = self.term.move(p_y + 2 + i, p_x + 2) + content_line
+                lines[p_y + 2 + i] = self.term.move(p_y + 2 + i, p_x + 2) + self.preview_content[content_idx].replace('\t', '    ')[:p_w - 4]
         scroll_info = f"Ln {self.preview_scroll+1}/{len(self.preview_content)}"
         help_info = "[↑↓ Scroll, p/q/Esc Close]"
         footer_text = f"{scroll_info.ljust(p_w - 2 - len(help_info))}{help_info}"
@@ -305,7 +290,7 @@ class FdlTuiApp:
                 key = self.term.inkey(timeout=0.1)
                 if not key: continue
 
-                if self.mode == 'browse':
+                if key and self.mode == 'browse':
                     if not self.flat_list: continue
                     current_node = self.flat_list[self.cursor_pos]
                     if key.code == self.term.KEY_UP: self.cursor_pos = max(0, self.cursor_pos - 1)
@@ -323,10 +308,8 @@ class FdlTuiApp:
                         if current_node['type'] == 'file' and is_encodable(current_node['path']):
                             self.mode = 'preview'; self.preview_node = current_node; self.preview_scroll = 0
                             try:
-                                with open(current_node['path'], 'r', encoding=ENCODING, errors='ignore') as f:
-                                    self.preview_content = f.read().splitlines()
-                            except IOError:
-                                self.preview_content = ["Error reading file."]
+                                with open(current_node['path'], 'r', encoding=ENCODING, errors='ignore') as f: self.preview_content = f.read().splitlines()
+                            except IOError: self.preview_content = ["Error reading file."]
                     elif key == '\t':
                         self.sort_by = 'size' if self.sort_by == 'name' else 'name'
                         self._sort_children(self.tree); self._update_flat_list()
@@ -340,7 +323,7 @@ class FdlTuiApp:
                         with open(filename, 'w', encoding=ENCODING) as f: f.write(content)
                         self.message = f"Saved to {filename}!"
                     elif key.lower() == 'q': self.running = False
-                elif self.mode == 'preview':
+                elif key and self.mode == 'preview':
                     content_h = max(1, self.term.height - 10)
                     if key.code == self.term.KEY_UP: self.preview_scroll = max(0, self.preview_scroll-1)
                     elif key.code == self.term.KEY_DOWN: self.preview_scroll = min(max(0, len(self.preview_content)-content_h), self.preview_scroll+1)
@@ -354,22 +337,20 @@ class FdlTuiApp:
                 if not self.running:
                     prompt = self.term.move(self.term.height - 1, 0) + self.term.bold_red("Are you sure you want to quit? [y/N] ".ljust(self.term.width))
                     print(prompt, end="", flush=True)
-                    confirm_key = self.term.inkey()
-                    if confirm_key.lower() == 'y': break
+                    if self.term.inkey().lower() == 'y': break
                     else: self.running = True; self.last_drawn_lines = []
 
     def _generate_fdl_string(self) -> str:
         fdl_parts = []
         def recurse(node: Dict):
             if node.get("selected", False):
-                if node["type"] == "file" and is_encodable(node["path"]):
-                    relative_path = os.path.relpath(node["path"], self.root_dir).replace(os.sep, '/')
-                    fdl_parts.append(f"{FILE_MARKER} {relative_path}")
-                    try:
-                        with open(node["path"], 'r', encoding=ENCODING) as f:
-                            fdl_parts.append(f.read())
-                    except Exception:
-                        fdl_parts.append(f"ERROR: Could not read file {relative_path}")
+                if node["type"] == "file":
+                    if is_encodable(node["path"]):
+                        relative_path = os.path.relpath(node["path"], self.root_dir).replace(os.sep, '/')
+                        fdl_parts.append(f"{FILE_MARKER} {relative_path}")
+                        try:
+                            with open(node["path"], 'r', encoding=ENCODING) as f: fdl_parts.append(f.read())
+                        except Exception: fdl_parts.append(f"ERROR: Could not read file {relative_path}")
                 elif node["type"] == "dir":
                     for child in node["children"]: recurse(child)
         if self.tree: recurse(self.tree)
@@ -378,18 +359,24 @@ class FdlTuiApp:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="TUI tool to pack file contents.")
     parser.add_argument("directory", nargs='?', default='.', help="Source directory.")
+    # --- 新增: exclude 参数 ---
+    parser.add_argument("--exclude", type=str, help='Comma/semicolon-separated list of file/dir patterns to exclude from the root (e.g., "node_modules,.git,*.log").')
     args = parser.parse_args()
+    
     if not os.path.isdir(args.directory):
         print(f"Error: Directory '{args.directory}' not found.", file=sys.stderr); sys.exit(1)
     
-    app = FdlTuiApp(args.directory)
+    exclude_patterns = []
+    if args.exclude:
+        # 支持逗号和分号作为分隔符，并去除首尾空格和目录斜杠
+        exclude_patterns = [p.strip().rstrip('/\\') for p in args.exclude.replace(';',',').split(',') if p.strip()]
+
+    app = FdlTuiApp(args.directory, exclude_patterns=exclude_patterns)
     try:
         app.run()
-    except (KeyboardInterrupt, Exception):
-        # 确保在任何情况下都能正常退出 TUI 模式
+    except (KeyboardInterrupt, Exception) as e:
         print(app.term.normal + app.term.clear, end="")
         if not isinstance(e, KeyboardInterrupt):
             print(f"\nAn unexpected error occurred: {e}", file=sys.stderr)
             import traceback; traceback.print_exc()
         sys.exit(1)
-
