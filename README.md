@@ -30,7 +30,27 @@ python tui_fdl_pro.py /path/to/my_project
 - `Space` / `+` / `-`: 切换当前文件/目录的选中状态（`+` 全选子项，`-` 取消全选子项）
 - `C`: 复制生成的 FDL 文本到剪切板
 - `S`: 将生成的 FDL 文本保存到 `fdl_output_YYYYMMDD_HHMMSS.txt` 文件
+- `:`: 进入命令模式，可输入更丰富的操作指令（如 `sort size`, `copy`, `select all` 等）
 - `Q`: 退出 `fdlpy`
+
+**命令模式快捷键:**
+
+按下 `:` 键进入命令模式，可以输入以下命令：
+- `:q` 或 `:quit` - 退出程序
+- `:w` 或 `:save` - 保存 FDL 到文件（可选指定文件名，如 `:w myfile.txt`）
+- `:c` 或 `:copy` - 复制 FDL 到剪切板
+- `:sort name` 或 `:sort size` - 切换排序方式
+- `:select all` 或 `:sel all` - 选择所有可编码文件
+- `:deselect all` 或 `:desel all` - 取消选择所有文件
+- `:expand all` 或 `:exp all` - 展开所有目录
+- `:collapse all` 或 `:col all` - 折叠所有目录
+- `:help` 或 `:h` - 显示可用命令帮助
+
+在命令模式下：
+- `Enter` 键执行命令
+- `Esc` 键取消并返回浏览模式
+- 支持左右箭头键、Home/End 键移动光标
+- 支持 Backspace/Delete 键编辑命令
 
 ### 命令行工具：目录到 FDL (复制)
 `/fdl_copy.py` 是一个简单的命令行工具，用于将指定目录下的所有**文本文件**（可编码为 UTF-8 的文件）打包成 FDL 格式，并自动复制到剪切板。

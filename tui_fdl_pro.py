@@ -85,6 +85,9 @@ class FdlTuiApp:
         self.preview_scroll = 0
         self.preview_node = None
 
+        self.command_buffer = ""
+        self.command_cursor = 0
+
     def _build_tree_worker(self):
         # 估算总数 (可能会因排除而略有不准, 但不影响功能)
         total_files = sum(len(files) for _, _, files in os.walk(self.root_dir))
@@ -245,13 +248,238 @@ class FdlTuiApp:
             
             lines.append(self.term.black_on_green(line) if line_idx == self.cursor_pos else line)
 
-        while len(lines) < height - 1: lines.append("")
-        footer = "↑↓ Move | ←→ Expand/Collapse | Tab Sort | p Preview | +/-/Spc Toggle | s Save | c Copy | q Quit"
+        while len(lines) < height - 2: lines.append("")
         if self.message:
-            footer = self.term.bold_yellow(self.message.ljust(self.term.width))
+            status_line = self.term.bold_yellow(self.message.ljust(self.term.width))
             self.message = ""
-        lines.append(self.term.bold_black_on_lightgray(footer.ljust(self.term.width)))
+        else:
+            status_line = " " * self.term.width
+        lines.append(status_line)
+
+        if self.mode == 'command':
+            lines.append(self._format_command_prompt())
+        else:
+            footer = "↑↓ Move | ←→ Expand/Collapse | Tab Sort | p Preview | +/-/Spc Toggle | s Save | c Copy | : Cmd | q Quit"
+            lines.append(self.term.bold_black_on_lightgray(footer.ljust(self.term.width)))
         self._render(lines)
+
+    def _format_command_prompt(self) -> str:
+        hint = "  Enter=Execute | Esc=Cancel"
+        available_width = max(10, self.term.width - len(hint))
+        buffer_with_colon = ":" + self.command_buffer
+        cursor_pos = self.command_cursor + 1
+
+        if cursor_pos > len(buffer_with_colon):
+            buffer_with_colon += " " * (cursor_pos - len(buffer_with_colon))
+
+        if len(buffer_with_colon) > available_width:
+            start = max(0, cursor_pos - available_width + 1)
+            buffer_segment = buffer_with_colon[start:start + available_width]
+            cursor_in_segment = cursor_pos - start
+        else:
+            buffer_segment = buffer_with_colon.ljust(available_width)
+            cursor_in_segment = cursor_pos
+
+        chars = list(buffer_segment)
+        if 0 <= cursor_in_segment < len(chars):
+            chars[cursor_in_segment] = '█'
+        else:
+            chars.append('█')
+        prompt_buffer = "".join(chars)
+
+        raw_line = (prompt_buffer + hint)[:self.term.width]
+        padding = max(0, self.term.width - len(self.term.strip_seqs(raw_line)))
+        return self.term.bold_black_on_lightgray(raw_line + " " * padding)
+
+    def _enter_command_mode(self):
+        self.mode = 'command'
+        self.command_buffer = ""
+        self.command_cursor = 0
+        self.message = "Command mode: Enter to execute, Esc to cancel."
+        self.last_drawn_lines = []
+
+    def _exit_command_mode(self):
+        self.mode = 'browse'
+        self.command_buffer = ""
+        self.command_cursor = 0
+        self.last_drawn_lines = []
+
+    def _handle_command_key(self, key):
+        if key.code in (self.term.KEY_ESCAPE,):
+            self._exit_command_mode(); return
+        if key.code in (self.term.KEY_ENTER, self.term.KEY_RETURN):
+            self._execute_command(self.command_buffer)
+            self._exit_command_mode(); return
+        if key.code in (self.term.KEY_BACKSPACE,):
+            if self.command_cursor > 0:
+                self.command_buffer = (
+                    self.command_buffer[:self.command_cursor - 1] + self.command_buffer[self.command_cursor:]
+                )
+                self.command_cursor -= 1
+            return
+        if key in ('\x08', '\x7f'):
+            if self.command_cursor > 0:
+                self.command_buffer = (
+                    self.command_buffer[:self.command_cursor - 1] + self.command_buffer[self.command_cursor:]
+                )
+                self.command_cursor -= 1
+            return
+        if key.code == self.term.KEY_DELETE:
+            if self.command_cursor < len(self.command_buffer):
+                self.command_buffer = (
+                    self.command_buffer[:self.command_cursor] + self.command_buffer[self.command_cursor + 1:]
+                )
+            return
+        if key.code == self.term.KEY_LEFT:
+            self.command_cursor = max(0, self.command_cursor - 1); return
+        if key.code == self.term.KEY_RIGHT:
+            self.command_cursor = min(len(self.command_buffer), self.command_cursor + 1); return
+        if key.code == self.term.KEY_HOME:
+            self.command_cursor = 0; return
+        if key.code == self.term.KEY_END:
+            self.command_cursor = len(self.command_buffer); return
+        if key.code == self.term.KEY_TAB:
+            return
+
+        if not key.is_sequence:
+            text = str(key)
+            if len(text) == 1 and 32 <= ord(text) < 127:
+                self.command_buffer = (
+                    self.command_buffer[:self.command_cursor] + text + self.command_buffer[self.command_cursor:]
+                )
+                self.command_cursor += 1
+            return
+
+    def _copy_to_clipboard(self):
+        content = self._generate_fdl_string()
+        pyperclip.copy(content)
+        self.message = f"Copied {format_size(len(content.encode(ENCODING)))} to clipboard!"
+        return content
+
+    def _save_to_file(self, filename: Optional[str] = None):
+        content = self._generate_fdl_string()
+        target = (filename or "").strip()
+        if not target:
+            target = f"fdl_output_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
+        try:
+            with open(target, 'w', encoding=ENCODING) as f:
+                f.write(content)
+            self.message = f"Saved to {target}!"
+        except Exception as exc:
+            self.message = f"Error saving to {target}: {exc}"
+        return content
+
+    def _set_sort_mode(self, mode: str, show_message: bool = True) -> bool:
+        if not mode:
+            return False
+        normalized = mode.lower()
+        if normalized not in ('name', 'size'):
+            if show_message:
+                self.message = f"Unknown sort mode: {mode}"
+            return False
+        if self.tree and self.sort_by != normalized:
+            self.sort_by = normalized
+            self._sort_children(self.tree)
+            self._update_flat_list()
+        else:
+            self.sort_by = normalized
+        if show_message:
+            self.message = f"Sorted by {self.sort_by.capitalize()}"
+        return True
+
+    def _set_all_expanded(self, expanded: bool):
+        if not self.tree:
+            return
+
+        def recurse(node: Dict, is_root: bool = False):
+            if node['type'] != 'dir':
+                return
+            node['expanded'] = True if is_root else expanded
+            for child in node['children']:
+                recurse(child, False)
+
+        recurse(self.tree, True)
+        self._update_flat_list()
+        self.message = "Expanded all directories." if expanded else "Collapsed all directories."
+
+    def _set_all_selected(self, selected: bool):
+        if not self.tree:
+            return
+
+        def recurse(node: Dict):
+            if node['type'] == 'file':
+                if node.get('encodable_count', 0):
+                    node['selected'] = selected
+            else:
+                node['selected'] = selected
+                for child in node['children']:
+                    recurse(child)
+
+        recurse(self.tree)
+        if selected:
+            self.selected_count = self.total_encodable_count
+            self.selected_size = self.total_encodable_size
+        else:
+            self.selected_count = 0
+            self.selected_size = 0
+        self.message = "Selected all encodable files." if selected else "Cleared selection."
+
+    def _execute_command(self, cmd: str):
+        cmd = cmd.strip()
+        if not cmd:
+            self.message = "Command cancelled."
+            return
+
+        parts = cmd.split()
+        command = parts[0].lower()
+        args = parts[1:]
+
+        if command in ('q', 'quit', 'exit'):
+            self.running = False
+            return
+        if command in ('w', 'write', 'save'):
+            filename = " ".join(args) if args else None
+            self._save_to_file(filename)
+            return
+        if command in ('c', 'copy', 'yank'):
+            self._copy_to_clipboard()
+            return
+        if command == 'sort':
+            if not args:
+                self.message = "Usage: sort name|size"
+            else:
+                self._set_sort_mode(args[0])
+            return
+        if command in ('select', 'sel'):
+            if args and args[0].lower() in ('all', '*', 'everything'):
+                self._set_all_selected(True)
+            else:
+                self.message = "Usage: select all"
+            return
+        if command in ('deselect', 'desel', 'unselect', 'unsel', 'clear'):
+            if args and args[0].lower() in ('all', '*', 'everything', 'selection'):
+                self._set_all_selected(False)
+            else:
+                self.message = "Usage: deselect all"
+            return
+        if command in ('expand', 'exp'):
+            if args and args[0].lower() in ('all', '*', 'everything'):
+                self._set_all_expanded(True)
+            else:
+                self.message = "Usage: expand all"
+            return
+        if command in ('collapse', 'col'):
+            if args and args[0].lower() in ('all', '*', 'everything'):
+                self._set_all_expanded(False)
+            else:
+                self.message = "Usage: collapse all"
+            return
+        if command in ('help', 'h', '?'):
+            self.message = ("Commands: q, w [filename], c, sort name|size, "
+                            "select all, deselect all, expand all, collapse all")
+            return
+
+        self.message = f"Unknown command: {cmd}"
 
     def _draw_preview_mode(self):
         w, h = self.term.width, self.term.height
@@ -284,45 +512,58 @@ class FdlTuiApp:
                         self.mode = 'browse'
                         self._update_flat_list()
                         self.last_drawn_lines = []
-                elif self.mode == 'browse': self._draw_browse_mode()
+                elif self.mode in ('browse', 'command'): self._draw_browse_mode()
                 elif self.mode == 'preview': self._draw_preview_mode()
 
                 key = self.term.inkey(timeout=0.1)
                 if not key: continue
 
                 if key and self.mode == 'browse':
-                    if not self.flat_list: continue
+                    if key == ':':
+                        self._enter_command_mode()
+                        continue
+                    if not self.flat_list:
+                        if key.lower() == 'q':
+                            self.running = False
+                        continue
                     current_node = self.flat_list[self.cursor_pos]
-                    if key.code == self.term.KEY_UP: self.cursor_pos = max(0, self.cursor_pos - 1)
-                    elif key.code == self.term.KEY_DOWN: self.cursor_pos = min(len(self.flat_list) - 1, self.cursor_pos + 1)
+                    if key.code == self.term.KEY_UP:
+                        self.cursor_pos = max(0, self.cursor_pos - 1)
+                    elif key.code == self.term.KEY_DOWN:
+                        self.cursor_pos = min(len(self.flat_list) - 1, self.cursor_pos + 1)
                     elif key.code == self.term.KEY_LEFT:
                         if current_node["type"] == "dir" and current_node["expanded"]:
-                            current_node["expanded"] = False; self._update_flat_list()
+                            current_node["expanded"] = False
+                            self._update_flat_list()
                     elif key.code == self.term.KEY_RIGHT:
                         if current_node["type"] == "dir" and not current_node["expanded"]:
-                            current_node["expanded"] = True; self._update_flat_list()
-                    elif key in ('+', '='): self._toggle_selection(current_node, select_state=True)
-                    elif key == '-': self._toggle_selection(current_node, select_state=False)
-                    elif key == ' ': self._toggle_selection(current_node)
+                            current_node["expanded"] = True
+                            self._update_flat_list()
+                    elif key in ('+', '='):
+                        self._toggle_selection(current_node, select_state=True)
+                    elif key == '-':
+                        self._toggle_selection(current_node, select_state=False)
+                    elif key == ' ':
+                        self._toggle_selection(current_node)
                     elif key.lower() == 'p':
                         if current_node['type'] == 'file' and is_encodable(current_node['path']):
-                            self.mode = 'preview'; self.preview_node = current_node; self.preview_scroll = 0
+                            self.mode = 'preview'
+                            self.preview_node = current_node
+                            self.preview_scroll = 0
                             try:
-                                with open(current_node['path'], 'r', encoding=ENCODING, errors='ignore') as f: self.preview_content = f.read().splitlines()
-                            except IOError: self.preview_content = ["Error reading file."]
+                                with open(current_node['path'], 'r', encoding=ENCODING, errors='ignore') as f:
+                                    self.preview_content = f.read().splitlines()
+                            except IOError:
+                                self.preview_content = ["Error reading file."]
                     elif key == '\t':
-                        self.sort_by = 'size' if self.sort_by == 'name' else 'name'
-                        self._sort_children(self.tree); self._update_flat_list()
-                        self.message = f"Sorted by {self.sort_by.capitalize()}"
+                        next_mode = 'size' if self.sort_by == 'name' else 'name'
+                        self._set_sort_mode(next_mode)
                     elif key.lower() == 'c':
-                        content = self._generate_fdl_string(); pyperclip.copy(content)
-                        self.message = f"Copied {format_size(len(content.encode(ENCODING)))} to clipboard!"
+                        self._copy_to_clipboard()
                     elif key.lower() == 's':
-                        content = self._generate_fdl_string()
-                        filename = f"fdl_output_{datetime.datetime.now():%Y%m%d_%H%M%S}.txt"
-                        with open(filename, 'w', encoding=ENCODING) as f: f.write(content)
-                        self.message = f"Saved to {filename}!"
-                    elif key.lower() == 'q': self.running = False
+                        self._save_to_file()
+                    elif key.lower() == 'q':
+                        self.running = False
                 elif key and self.mode == 'preview':
                     content_h = max(1, self.term.height - 10)
                     if key.code == self.term.KEY_UP: self.preview_scroll = max(0, self.preview_scroll-1)
@@ -333,6 +574,9 @@ class FdlTuiApp:
                     elif key.code == self.term.KEY_END: self.preview_scroll = max(0, len(self.preview_content)-content_h)
                     elif key.lower() in ('p', 'q') or key.code == self.term.KEY_ESCAPE:
                         self.mode = 'browse'; self.last_drawn_lines = []
+                
+                elif key and self.mode == 'command':
+                    self._handle_command_key(key)
 
                 if not self.running:
                     prompt = self.term.move(self.term.height - 1, 0) + self.term.bold_red("Are you sure you want to quit? [y/N] ".ljust(self.term.width))
