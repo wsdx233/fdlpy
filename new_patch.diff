@@ -1,0 +1,2053 @@
+$$DIFF project.godot
+
+--- a/project.godot
++++ b/project.godot
+@@ -549,6 +549,7 @@
+ config/max_breadcrumbs=100
+ options/debug_printing=0
+ options/diagnostic_level=2
++options/enable_logs=false
+ 
+ [xr]
+ 
+
+$$DIFF release_info.json
+
+--- a/release_info.json
++++ b/release_info.json
+@@ -1,6 +1,6 @@
+ {
+-  "commit": "0f301c85",
+-  "version": "v0.98.0",
+-  "date": "2026-03-04T18:01:10-08:00",
+-  "branch": "v0.98.0"
++  "commit": "f4eeecc6",
++  "version": "v0.98.2",
++  "date": "2026-03-06T15:52:37-08:00",
++  "branch": "v0.98.2"
+ }
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/AchievementConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\AchievementConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\AchievementConsoleCmd.cs
+@@ -39,7 +39,7 @@
+ 		Achievement? achievement = null;
+ 		if (args.Length >= 2)
+ 		{
+-			string text = args[1].ToLower();
++			string text = args[1].ToLowerInvariant();
+ 			Achievement[] values = Enum.GetValues<Achievement>();
+ 			for (int i = 0; i < values.Length; i++)
+ 			{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/ActConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\ActConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\ActConsoleCmd.cs
+@@ -38,7 +38,7 @@
+ 			Task task = NextAct(actIndex);
+ 			return new CmdResult(task, success: true, $"Navigated to act '{result}'.");
+ 		}
+-		string actName = args[0].ToUpper();
++		string actName = args[0].ToUpperInvariant();
+ 		ActModel actModel = ModelDb.Acts.FirstOrDefault((ActModel c) => c.Id.Entry == actName);
+ 		if (actModel == null)
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/AfflictConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\AfflictConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\AfflictConsoleCmd.cs
+@@ -31,7 +31,7 @@
+ 		{
+ 			return new CmdResult(success: false, "Combat is not currently in progress!");
+ 		}
+-		ModelId modelId = new ModelId(ModelId.SlugifyCategory<AfflictionModel>(), args[0].ToUpper());
++		ModelId modelId = new ModelId(ModelId.SlugifyCategory<AfflictionModel>(), args[0].ToUpperInvariant());
+ 		AfflictionModel afflictionModel;
+ 		try
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/AncientConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\AncientConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\AncientConsoleCmd.cs
+@@ -27,7 +27,7 @@
+ 		{
+ 			return new CmdResult(success: false, "No ancient ID specified.");
+ 		}
+-		ModelId id = new ModelId(ModelDb.GetCategory(typeof(EventModel)), args[0].ToUpper());
++		ModelId id = new ModelId(ModelDb.GetCategory(typeof(EventModel)), args[0].ToUpperInvariant());
+ 		EventModel byIdOrNull = ModelDb.GetByIdOrNull<EventModel>(id);
+ 		if (!(byIdOrNull is AncientEventModel ancientEventModel))
+ 		{
+@@ -36,7 +36,7 @@
+ 		string choice = null;
+ 		if (args.Length > 1)
+ 		{
+-			choice = args[1].ToUpper();
++			choice = args[1].ToUpperInvariant();
+ 		}
+ 		if (choice != null && !ancientEventModel.AllPossibleOptions.Any((EventOption option) => option.TextKey.Contains(choice)))
+ 		{
+@@ -64,7 +64,7 @@
+ 		}
+ 		if (args.Length == 2)
+ 		{
+-			ModelId id = new ModelId(ModelDb.GetCategory(typeof(EventModel)), args[0].ToUpper());
++			ModelId id = new ModelId(ModelDb.GetCategory(typeof(EventModel)), args[0].ToUpperInvariant());
+ 			EventModel byIdOrNull = ModelDb.GetByIdOrNull<EventModel>(id);
+ 			if (byIdOrNull is AncientEventModel ancientEventModel)
+ 			{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/ApplyPowerConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\ApplyPowerConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\ApplyPowerConsoleCmd.cs
+@@ -48,7 +48,7 @@
+ 		{
+ 			return new CmdResult(success: false, "Arg 1 must be the amount of power to be applied.");
+ 		}
+-		string powerId = args[0].ToUpper();
++		string powerId = args[0].ToUpperInvariant();
+ 		PowerModel power = AllPowers.FirstOrDefault((PowerModel c) => c.Id.Entry == powerId);
+ 		if (power == null)
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/ArtConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\ArtConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\ArtConsoleCmd.cs
+@@ -46,7 +46,7 @@
+ 		{
+ 			return new CmdResult(success: false, CmdName + " requires a type. " + TypesHint);
+ 		}
+-		string text = args[0].ToLower();
++		string text = args[0].ToLowerInvariant();
+ 		if (text.EndsWith('s'))
+ 		{
+ 			string text2 = text;
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/CardConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\CardConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\CardConsoleCmd.cs
+@@ -45,7 +45,7 @@
+ 				return new CmdResult(success: false, $"The hand is full ({count}/{10}).");
+ 			}
+ 		}
+-		string cardName = args[0].ToUpper();
++		string cardName = args[0].ToUpperInvariant();
+ 		CardModel cardModel = ModelDb.AllCards.FirstOrDefault((CardModel c) => c.Id.Entry == cardName);
+ 		if (cardModel == null)
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/EnchantConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\EnchantConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\EnchantConsoleCmd.cs
+@@ -30,7 +30,7 @@
+ 		{
+ 			return new CmdResult(success: false, "Combat is not currently in progress!");
+ 		}
+-		ModelId modelId = new ModelId(ModelId.SlugifyCategory<EnchantmentModel>(), args[0].ToUpper());
++		ModelId modelId = new ModelId(ModelId.SlugifyCategory<EnchantmentModel>(), args[0].ToUpperInvariant());
+ 		EnchantmentModel enchantmentModel;
+ 		try
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/EventConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\EventConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\EventConsoleCmd.cs
+@@ -32,7 +32,7 @@
+ 		{
+ 			return new CmdResult(success: false, "A run is currently not in progress!");
+ 		}
+-		string eventName = args[0].ToUpper();
++		string eventName = args[0].ToUpperInvariant();
+ 		EventModel eventModel = Events.FirstOrDefault((EventModel c) => c.Id.Entry == eventName);
+ 		if (eventModel == null)
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/FightConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\FightConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\FightConsoleCmd.cs
+@@ -31,7 +31,7 @@
+ 		{
+ 			return new CmdResult(success: false, "A run is currently not in progress!");
+ 		}
+-		ModelId modelId = new ModelId(ModelId.SlugifyCategory<EncounterModel>(), args[0].ToUpper());
++		ModelId modelId = new ModelId(ModelId.SlugifyCategory<EncounterModel>(), args[0].ToUpperInvariant());
+ 		EncounterModel encounterModel;
+ 		try
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/PotionConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\PotionConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\PotionConsoleCmd.cs
+@@ -29,7 +29,7 @@
+ 		{
+ 			return new CmdResult(success: false, "A run is not in progress.");
+ 		}
+-		string potionId = args[0].ToUpper();
++		string potionId = args[0].ToUpperInvariant();
+ 		PotionModel potionModel = ModelDb.AllPotions.FirstOrDefault((PotionModel p) => p.Id.Entry == potionId);
+ 		if (potionModel == null)
+ 		{
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/RelicConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\RelicConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\RelicConsoleCmd.cs
+@@ -30,7 +30,7 @@
+ 			return new CmdResult(success: false, "A run is currently not in progress!");
+ 		}
+ 		string text;
+-		if (args[0].ToLower().Equals("add") || args[0].ToLower().Equals("remove"))
++		if (args[0].ToLowerInvariant().Equals("add") || args[0].ToLowerInvariant().Equals("remove"))
+ 		{
+ 			if (args.Length < 2)
+ 			{
+@@ -47,7 +47,7 @@
+ 		{
+ 			return new CmdResult(success: false, "Unable to create relic '" + text + "'.");
+ 		}
+-		if (args[0].ToLower().Equals("remove"))
++		if (args[0].ToLowerInvariant().Equals("remove"))
+ 		{
+ 			RelicModel relicById2 = issuingPlayer.GetRelicById(relicById.Id);
+ 			if (relicById2 != null)
+@@ -63,7 +63,7 @@
+ 
+ 	private static RelicModel? GetRelicById(string id)
+ 	{
+-		id = id.ToUpper();
++		id = id.ToUpperInvariant();
+ 		List<RelicModel> source = ModelDb.AllRelics.Where((RelicModel r) => r.Id.Entry.Contains(id)).ToList();
+ 		RelicModel relicModel = source.FirstOrDefault((RelicModel r) => r.Id.Entry == id);
+ 		if (relicModel != null)
+@@ -99,7 +99,7 @@
+ 		if (args.Length == 1)
+ 		{
+ 			List<string> list2 = new List<string>();
+-			string text = args[0].ToLower();
++			string text = args[0].ToLowerInvariant();
+ 			if ("add".StartsWith(text))
+ 			{
+ 				list2.Add("add");
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/RemoveCardConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\RemoveCardConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\RemoveCardConsoleCmd.cs
+@@ -30,7 +30,7 @@
+ 		{
+ 			return new CmdResult(success: false, "A run is currently not in progress!");
+ 		}
+-		string cardName = args[0].ToUpper();
++		string cardName = args[0].ToUpperInvariant();
+ 		CardModel cardModel = ModelDb.AllCards.FirstOrDefault((CardModel c) => c.Id.Entry == cardName);
+ 		PileType result = PileType.Hand;
+ 		if (args.Length >= 2 && !AbstractConsoleCmd.TryParseEnum<PileType>(args[1], out result))
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/RoomConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\RoomConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\RoomConsoleCmd.cs
+@@ -28,7 +28,7 @@
+ 		{
+ 			return new CmdResult(success: false, "A run is currently not in progress!");
+ 		}
+-		string text = args[0].ToUpper();
++		string text = args[0].ToUpperInvariant();
+ 		if (!AbstractConsoleCmd.TryParseEnum<RoomType>(text, out var result))
+ 		{
+ 			return new CmdResult(success: false, "Room '" + text + "' not found");
+
+$$DIFF src/Core/DevConsole/ConsoleCommands/UnlockConsoleCmd.cs
+
+--- a/src\Core\DevConsole\ConsoleCommands\UnlockConsoleCmd.cs
++++ b/src\Core\DevConsole\ConsoleCommands\UnlockConsoleCmd.cs
+@@ -93,7 +93,7 @@
+ 		{
+ 			for (int i = 0; i < args.Count; i++)
+ 			{
+-				args[i] = args[i].ToUpper();
++				args[i] = args[i].ToUpperInvariant();
+ 			}
+ 			if (_validIdSources.TryGetValue(discoveryType, out Func<IEnumerable<string>> value2))
+ 			{
+
+$$DIFF src/Core/DevConsole/DevConsole.cs
+
+--- a/src\Core\DevConsole\DevConsole.cs
++++ b/src\Core\DevConsole\DevConsole.cs
+@@ -91,7 +91,7 @@
+ 			completionResult.ArgumentContext = "";
+ 			return completionResult;
+ 		}
+-		if (_commands.TryGetValue(text.Trim().ToLower(), out AbstractConsoleCmd value))
++		if (_commands.TryGetValue(text.Trim().ToLowerInvariant(), out AbstractConsoleCmd value))
+ 		{
+ 			string[] array2 = array.Skip(1).ToArray();
+ 			string text2 = text + " ";
+@@ -239,7 +239,7 @@
+ 		SaveCommandHistory();
+ 		string[] array = inputValue.Split(' ');
+ 		Player me = LocalContext.GetMe(RunManager.Instance.DebugOnlyGetState());
+-		if (!RunManager.Instance.IsSinglePlayerOrFakeMultiplayer && _commands.TryGetValue(array[0].ToLower(), out AbstractConsoleCmd value) && value.IsNetworked && me != null)
++		if (!RunManager.Instance.IsSinglePlayerOrFakeMultiplayer && _commands.TryGetValue(array[0].ToLowerInvariant(), out AbstractConsoleCmd value) && value.IsNetworked && me != null)
+ 		{
+ 			RunManager.Instance.ActionQueueSynchronizer.RequestEnqueue(new ConsoleCmdGameAction(me, inputValue));
+ 			return new CmdResult(success: true, $"Enqueued {array[0]} command: '{inputValue}'");
+@@ -273,7 +273,7 @@
+ 		{
+ 			return HelpCmd(args);
+ 		}
+-		if (_commands.TryGetValue(cmdName.ToLower(), out AbstractConsoleCmd value))
++		if (_commands.TryGetValue(cmdName.ToLowerInvariant(), out AbstractConsoleCmd value))
+ 		{
+ 			return value.Process(player, args);
+ 		}
+
+$$DIFF src/Core/Entities/CardRewardAlternatives/CardRewardAlternative.cs
+
+--- a/src\Core\Entities\CardRewardAlternatives\CardRewardAlternative.cs
++++ b/src\Core\Entities\CardRewardAlternatives\CardRewardAlternative.cs
+@@ -13,7 +13,7 @@
+ {
+ 	public string OptionId { get; }
+ 
+-	public LocString Title => new LocString("card_reward_ui", "OPTION_" + OptionId.ToUpper() + ".name");
++	public LocString Title => new LocString("card_reward_ui", "OPTION_" + OptionId.ToUpperInvariant() + ".name");
+ 
+ 	public string Hotkey { get; }
+ 
+
+$$DIFF src/Core/Entities/RestSite/RestSiteOption.cs
+
+--- a/src\Core\Entities\RestSite\RestSiteOption.cs
++++ b/src\Core\Entities\RestSite\RestSiteOption.cs
+@@ -22,7 +22,7 @@
+ 
+ 	public virtual LocString Description => new LocString("rest_site_ui", "OPTION_" + OptionId + ".description");
+ 
+-	private string IconPath => ImageHelper.GetImagePath("ui/rest_site/option_" + OptionId.ToLower() + ".png");
++	private string IconPath => ImageHelper.GetImagePath("ui/rest_site/option_" + OptionId.ToLowerInvariant() + ".png");
+ 
+ 	public Texture2D Icon => PreloadManager.Cache.GetTexture2D(IconPath);
+ 
+
+$$DIFF src/Core/Events/Custom/CrystalSphereEvent/CrystalSphereItems/CrystalSphereCardReward.cs
+
+--- a/src\Core\Events\Custom\CrystalSphereEvent\CrystalSphereItems\CrystalSphereCardReward.cs
++++ b/src\Core\Events\Custom\CrystalSphereEvent\CrystalSphereItems\CrystalSphereCardReward.cs
+@@ -36,7 +36,7 @@
+ 
+ 	public override Vector2I Size => new Vector2I(2, 2);
+ 
+-	protected override string TexturePath => ImageHelper.GetImagePath("events/crystal_sphere/crystal_sphere_" + _rarity.ToString().ToLower() + "_card_reward.png");
++	protected override string TexturePath => ImageHelper.GetImagePath("events/crystal_sphere/crystal_sphere_" + _rarity.ToString().ToLowerInvariant() + "_card_reward.png");
+ 
+ 	public override bool IsGood => true;
+ 
+
+$$DIFF src/Core/Events/Custom/CrystalSphereEvent/CrystalSphereItems/CrystalSpherePotion.cs
+
+--- a/src\Core\Events\Custom\CrystalSphereEvent\CrystalSphereItems\CrystalSpherePotion.cs
++++ b/src\Core\Events\Custom\CrystalSphereEvent\CrystalSphereItems\CrystalSpherePotion.cs
+@@ -14,7 +14,7 @@
+ 
+ 	private PotionModel _potion;
+ 
+-	protected override string TexturePath => ImageHelper.GetImagePath("events/crystal_sphere/crystal_sphere_" + _potion.Rarity.ToString().ToLower() + "_potion.png");
++	protected override string TexturePath => ImageHelper.GetImagePath("events/crystal_sphere/crystal_sphere_" + _potion.Rarity.ToString().ToLowerInvariant() + "_potion.png");
+ 
+ 	public override bool IsGood => true;
+ 
+
+$$DIFF src/Core/Helpers/BadWordChecker.cs
+
+--- a/src\Core\Helpers\BadWordChecker.cs
++++ b/src\Core\Helpers\BadWordChecker.cs
+@@ -66,11 +66,11 @@
+ 
+ 	public static bool ContainsBadWord(string text)
+ 	{
+-		string text2 = text.ToLower();
++		string text2 = text.ToLowerInvariant();
+ 		string[] badWords = _badWords;
+ 		foreach (string text3 in badWords)
+ 		{
+-			if (text2.Contains(text3.ToLower()))
++			if (text2.Contains(text3.ToLowerInvariant()))
+ 			{
+ 				return true;
+ 			}
+
+$$DIFF src/Core/Helpers/EnergyIconHelper.cs
+
+--- a/src\Core\Helpers\EnergyIconHelper.cs
++++ b/src\Core\Helpers\EnergyIconHelper.cs
+@@ -20,7 +20,7 @@
+ 
+ 	public static string GetPath(string prefix)
+ 	{
+-		return ImageHelper.GetImagePath("atlases/ui_atlas.sprites/card/energy_" + prefix.ToLower() + ".tres");
++		return ImageHelper.GetImagePath("atlases/ui_atlas.sprites/card/energy_" + prefix.ToLowerInvariant() + ".tres");
+ 	}
+ 
+ 	private static IPoolModel GetPool(AbstractModel model)
+
+$$DIFF src/Core/Helpers/ImageHelper.cs
+
+--- a/src\Core\Helpers\ImageHelper.cs
++++ b/src\Core\Helpers\ImageHelper.cs
+@@ -48,13 +48,13 @@
+ 	{
+ 		if (modelId != null)
+ 		{
+-			return modelId.Entry.ToLower();
++			return modelId.Entry.ToLowerInvariant();
+ 		}
+ 		if (roomType == RoomType.Boss)
+ 		{
+ 			return null;
+ 		}
+-		string text = StringHelper.Slugify(roomType.ToString()).ToLower();
++		string text = StringHelper.Slugify(roomType.ToString()).ToLowerInvariant();
+ 		if (mapPointType == MapPointType.Unknown && roomType != RoomType.Event)
+ 		{
+ 			return "unknown_" + text;
+
+$$DIFF src/Core/Helpers/SeedHelper.cs
+
+--- a/src\Core\Helpers\SeedHelper.cs
++++ b/src\Core\Helpers\SeedHelper.cs
+@@ -27,7 +27,7 @@
+ 
+ 	public static string CanonicalizeSeed(string seed)
+ 	{
+-		seed = seed.ToUpper();
++		seed = seed.ToUpperInvariant();
+ 		seed = seed.Replace('O', '0');
+ 		seed = seed.Replace('I', '1');
+ 		seed = seed.Trim();
+
+$$DIFF src/Core/Helpers/StringHelper.cs
+
+--- a/src\Core\Helpers\StringHelper.cs
++++ b/src\Core\Helpers\StringHelper.cs
+@@ -40,25 +40,25 @@
+ 
+ 	public static string SnakeCase(string txt)
+ 	{
+-		return CamelCaseRegex().Replace(txt.Trim(), "$1_$2").ToLower();
++		return CamelCaseRegex().Replace(txt.Trim(), "$1_$2").ToLowerInvariant();
+ 	}
+ 
+ 	public static string Slugify(string txt)
+ 	{
+ 		string text = CamelCaseRegex().Replace(txt.Trim(), "$1_$2");
+-		string input = WhitespaceRegex().Replace(text.ToUpper(), "_");
++		string input = WhitespaceRegex().Replace(text.ToUpperInvariant(), "_");
+ 		return SpecialCharRegex().Replace(input, "");
+ 	}
+ 
+ 	public static string Unslugify(string txt)
+ 	{
+-		string text = SnakeCaseRegex().Replace(txt.Trim().ToLower(), delegate(Match match)
++		string text = SnakeCaseRegex().Replace(txt.Trim().ToLowerInvariant(), delegate(Match match)
+ 		{
+ 			string text3 = match.Groups[1].ToString();
+ 			string text4 = match.Groups[2].ToString();
+-			return text3 + text4.ToUpper();
++			return text3 + text4.ToUpperInvariant();
+ 		});
+-		ReadOnlySpan<char> readOnlySpan = new ReadOnlySpan<char>(char.ToUpper(text[0]));
++		ReadOnlySpan<char> readOnlySpan = new ReadOnlySpan<char>(char.ToUpperInvariant(text[0]));
+ 		string text2 = text;
+ 		return string.Concat(readOnlySpan, text2.Substring(1, text2.Length - 1));
+ 	}
+@@ -132,7 +132,7 @@
+ 
+ 	public static string Capitalize(string input)
+ 	{
+-		return char.ToUpper(input[0]) + input.Substring(1, input.Length - 1);
++		return char.ToUpperInvariant(input[0]) + input.Substring(1, input.Length - 1);
+ 	}
+ 
+ 	public static string StripBbCode(this string text)
+
+$$DIFF src/Core/Localization/LocManager.cs
+
+--- a/src\Core\Localization\LocManager.cs
++++ b/src\Core\Localization\LocManager.cs
+@@ -6,6 +6,7 @@
+ using System.Linq;
+ using System.Runtime.InteropServices;
+ using System.Text.Json;
++using System.Text.RegularExpressions;
+ using Godot;
+ using MegaCrit.Sts2.Core.Localization.Formatters;
+ using MegaCrit.Sts2.Core.Logging;
+@@ -16,6 +17,7 @@
+ using Sentry;
+ using SmartFormat;
+ using SmartFormat.Core.Formatting;
++using SmartFormat.Core.Parsing;
+ using SmartFormat.Extensions;
+ 
+ namespace MegaCrit.Sts2.Core.Localization;
+@@ -55,6 +57,8 @@
+ 
+ 	private readonly List<LocaleChangeCallback> _localeChangeCallbacks = new List<LocaleChangeCallback>();
+ 
++	private static readonly CultureInfo EnglishCultureInfo;
++
+ 	public static LocManager Instance { get; private set; } = null;
+ 
+ 	private static string LocalizationAssetDir => "res://localization";
+@@ -86,15 +90,21 @@
+ 		{
+ 			string rawLanguage = PlatformUtil.GetRawLanguage();
+ 			text = PlatformUtil.GetThreeLetterLanguageCode();
+-			if (text == null)
+-			{
+-				Log.Warn("Could not initialize language from platform language: " + rawLanguage + ". Defaulting to english");
++			if (text == null || !Languages.Contains(text))
++			{
++				Log.Warn($"Could not initialize language from platform language: {rawLanguage} (resolved: {text}). Defaulting to english");
+ 				text = "eng";
+ 			}
+ 			else
+ 			{
+ 				Log.Info("Initializing language for the first time from platform locale: " + rawLanguage + " -> " + text);
+ 			}
++			SaveManager.Instance.SettingsSave.Language = text;
++		}
++		else if (!Languages.Contains(text))
++		{
++			Log.Warn("Saved language '" + text + "' is not supported. Defaulting to english");
++			text = "eng";
+ 			SaveManager.Instance.SettingsSave.Language = text;
+ 		}
+ 		SetLanguage(text);
+@@ -210,15 +220,21 @@
+ 	public string SmartFormat(LocString locString, Dictionary<string, object> variables)
+ 	{
+ 		string rawText = locString.GetRawText();
++		LocTable table = GetTable(locString.LocTable);
++		CultureInfo provider = (table.IsLocalKey(locString.LocEntryKey) ? CultureInfo : EnglishCultureInfo);
+ 		try
+ 		{
+-			return _smartFormatter.Format(CultureInfo, rawText, variables);
+-		}
+-		catch (FormattingException ex)
++			return _smartFormatter.Format(provider, rawText, variables);
++		}
++		catch (Exception ex) when (((ex is FormattingException || ex is ParsingErrors) ? 1 : 0) != 0)
+ 		{
+ 			string text = $"message={ex.Message}\ntable={locString.LocTable} key={locString.LocEntryKey} variables={ToString(variables)}";
+ 			Log.Error("Localization formatting error! " + text);
+-			SentrySdk.CaptureException(new LocException(text));
++			string errorPattern = Regex.Replace(ex.Message.Split('\n')[0], " at \\d+$", "");
++			SentrySdk.CaptureException(new LocException(text), delegate(Scope scope)
++			{
++				scope.SetFingerprint("LocException", errorPattern);
++			});
+ 			return rawText;
+ 		}
+ 	}
+@@ -303,9 +319,9 @@
+ 		bool item = false;
+ 		if (!DirAccess.DirExistsAbsolute(text))
+ 		{
+-			Log.Warn($"Dir path {text} for language {language} does not exist, falling back to eng with www transform");
++			Log.Warn($"Dir path {text} for language {language} does not exist, falling back to eng");
+ 			text = LocalizationAssetDir + "/eng";
+-			flag = true;
++			flag = OS.IsDebugBuild();
+ 		}
+ 		string text2 = ProjectSettings.GlobalizePath("user://localization_override");
+ 		string text3 = Path.Combine(text2, language);
+@@ -514,5 +530,6 @@
+ 		num2++;
+ 		span[num2] = "tur";
+ 		Languages = list;
++		EnglishCultureInfo = System.Globalization.CultureInfo.GetCultureInfo("en");
+ 	}
+ }
+
+$$DIFF src/Core/Localization/LocTable.cs
+
+--- a/src\Core\Localization\LocTable.cs
++++ b/src\Core\Localization\LocTable.cs
+@@ -67,6 +67,11 @@
+ 		return hashSet.Select((string k) => new LocString(_name, k)).ToList();
+ 	}
+ 
++	public bool IsLocalKey(string key)
++	{
++		return _translations.ContainsKey(key);
++	}
++
+ 	public bool HasEntry(string key)
+ 	{
+ 		if (!_translations.ContainsKey(key))
+
+$$DIFF src/Core/Logging/ConsoleLogPrinter.cs
+
+--- a/src\Core\Logging\ConsoleLogPrinter.cs
++++ b/src\Core\Logging\ConsoleLogPrinter.cs
+@@ -8,7 +8,7 @@
+ 	public void Print(LogLevel logLevel, string text, int skipFrames)
+ 	{
+ 		skipFrames++;
+-		string text2 = logLevel.ToString().ToUpper();
++		string text2 = logLevel.ToString().ToUpperInvariant();
+ 		switch (logLevel)
+ 		{
+ 		case LogLevel.Error:
+
+$$DIFF src/Core/Logging/EditorLogPrinter.cs
+
+--- a/src\Core\Logging\EditorLogPrinter.cs
++++ b/src\Core\Logging\EditorLogPrinter.cs
+@@ -38,7 +38,7 @@
+ 	public void Print(LogLevel level, string text, int skipFrames)
+ 	{
+ 		skipFrames++;
+-		string value = level.ToString().ToUpper();
++		string value = level.ToString().ToUpperInvariant();
+ 		string colorCode = GetColorCode(level);
+ 		string text2 = $"[b][color={colorCode}][{value}][/color][/b] {text}";
+ 		string text3 = "";
+
+$$DIFF src/Core/Models/ActModel.cs
+
+--- a/src\Core\Models\ActModel.cs
++++ b/src\Core\Models\ActModel.cs
+@@ -44,7 +44,7 @@
+ 
+ 	public LocString Title => new LocString("acts", base.Id.Entry + ".title");
+ 
+-	protected string FilePathIdentifier => base.Id.Entry.ToLower();
++	protected string FilePathIdentifier => base.Id.Entry.ToLowerInvariant();
+ 
+ 	public string RestSiteBackgroundPath => SceneHelper.GetScenePath("rest_site/" + FilePathIdentifier + "_rest_site");
+ 
+
+$$DIFF src/Core/Models/AfflictionModel.cs
+
+--- a/src\Core\Models\AfflictionModel.cs
++++ b/src\Core\Models\AfflictionModel.cs
+@@ -59,7 +59,7 @@
+ 		}
+ 	}
+ 
+-	public string OverlayPath => SceneHelper.GetScenePath("cards/overlays/afflictions/" + base.Id.Entry.ToLower());
++	public string OverlayPath => SceneHelper.GetScenePath("cards/overlays/afflictions/" + base.Id.Entry.ToLowerInvariant());
+ 
+ 	public bool HasOverlay => ResourceLoader.Exists(OverlayPath);
+ 
+
+$$DIFF src/Core/Models/AncientEventModel.cs
+
+--- a/src\Core\Models\AncientEventModel.cs
++++ b/src\Core\Models\AncientEventModel.cs
+@@ -95,9 +95,9 @@
+ 
+ 	public override EventLayoutType LayoutType => EventLayoutType.Ancient;
+ 
+-	private string MapIconPath => ImageHelper.GetImagePath("packed/map/ancients/ancient_node_" + base.Id.Entry.ToLower() + ".png");
+-
+-	private string MapIconOutlinePath => ImageHelper.GetImagePath("packed/map/ancients/ancient_node_" + base.Id.Entry.ToLower() + "_outline.png");
++	private string MapIconPath => ImageHelper.GetImagePath("packed/map/ancients/ancient_node_" + base.Id.Entry.ToLowerInvariant() + ".png");
++
++	private string MapIconOutlinePath => ImageHelper.GetImagePath("packed/map/ancients/ancient_node_" + base.Id.Entry.ToLowerInvariant() + "_outline.png");
+ 
+ 	public Texture2D MapIcon => PreloadManager.Cache.GetCompressedTexture2D(MapIconPath);
+ 
+@@ -113,7 +113,7 @@
+ 
+ 	public Texture2D RunHistoryIconOutline => PreloadManager.Cache.GetCompressedTexture2D(RunHistoryIconOutlinePath);
+ 
+-	private string RunHistoryIconOutlinePath => ImageHelper.GetImagePath("ui/run_history/" + base.Id.Entry.ToLower() + "_outline.png");
++	private string RunHistoryIconOutlinePath => ImageHelper.GetImagePath("ui/run_history/" + base.Id.Entry.ToLowerInvariant() + "_outline.png");
+ 
+ 	public int HealedAmount { get; private set; }
+ 
+
+$$DIFF src/Core/Models/CardModel.cs
+
+--- a/src\Core\Models\CardModel.cs
++++ b/src\Core\Models\CardModel.cs
+@@ -122,15 +122,15 @@
+ 		}
+ 	}
+ 
+-	public virtual string PortraitPath => ImageHelper.GetImagePath($"atlases/card_atlas.sprites/{Pool.Title.ToLower()}/{base.Id.Entry.ToLower()}.tres");
+-
+-	public virtual string BetaPortraitPath => ImageHelper.GetImagePath($"atlases/card_atlas.sprites/{Pool.Title.ToLower()}/beta/{base.Id.Entry.ToLower()}.tres");
++	public virtual string PortraitPath => ImageHelper.GetImagePath($"atlases/card_atlas.sprites/{Pool.Title.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}.tres");
++
++	public virtual string BetaPortraitPath => ImageHelper.GetImagePath($"atlases/card_atlas.sprites/{Pool.Title.ToLowerInvariant()}/beta/{base.Id.Entry.ToLowerInvariant()}.tres");
+ 
+ 	public static string MissingPortraitPath => ImageHelper.GetImagePath("atlases/card_atlas.sprites/beta.tres");
+ 
+-	private string PortraitPngPath => ImageHelper.GetImagePath($"packed/card_portraits/{Pool.Title.ToLower()}/{base.Id.Entry.ToLower()}.png");
+-
+-	private string BetaPortraitPngPath => ImageHelper.GetImagePath($"packed/card_portraits/{Pool.Title.ToLower()}/beta/{base.Id.Entry.ToLower()}.png");
++	private string PortraitPngPath => ImageHelper.GetImagePath($"packed/card_portraits/{Pool.Title.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}.png");
++
++	private string BetaPortraitPngPath => ImageHelper.GetImagePath($"packed/card_portraits/{Pool.Title.ToLowerInvariant()}/beta/{base.Id.Entry.ToLowerInvariant()}.png");
+ 
+ 	public bool HasPortrait => ResourceLoader.Exists(PortraitPngPath);
+ 
+@@ -161,7 +161,7 @@
+ 			}
+ 			if (Rarity != CardRarity.Ancient)
+ 			{
+-				return ImageHelper.GetImagePath("atlases/ui_atlas.sprites/card/card_frame_" + cardType.ToString().ToLower() + "_s.tres");
++				return ImageHelper.GetImagePath("atlases/ui_atlas.sprites/card/card_frame_" + cardType.ToString().ToLowerInvariant() + "_s.tres");
+ 			}
+ 			return ImageHelper.GetImagePath("atlases/card_atlas.sprites/beta.tres");
+ 		}
+@@ -190,7 +190,7 @@
+ 			default:
+ 				throw new ArgumentOutOfRangeException();
+ 			}
+-			return ImageHelper.GetImagePath("atlases/ui_atlas.sprites/card/card_portrait_border_" + cardType.ToString().ToLower() + "_s.tres");
++			return ImageHelper.GetImagePath("atlases/ui_atlas.sprites/card/card_portrait_border_" + cardType.ToString().ToLowerInvariant() + "_s.tres");
+ 		}
+ 	}
+ 
+@@ -219,7 +219,7 @@
+ 			default:
+ 				throw new ArgumentOutOfRangeException();
+ 			}
+-			return ImageHelper.GetImagePath("atlases/compressed.sprites/card_template/ancient_card_text_bg_" + cardType.ToString().ToLower() + ".tres");
++			return ImageHelper.GetImagePath("atlases/compressed.sprites/card_template/ancient_card_text_bg_" + cardType.ToString().ToLowerInvariant() + ".tres");
+ 		}
+ 	}
+ 
+@@ -694,7 +694,7 @@
+ 
+ 	public virtual bool HasBuiltInOverlay => false;
+ 
+-	public string OverlayPath => SceneHelper.GetScenePath("cards/overlays/" + base.Id.Entry.ToLower());
++	public string OverlayPath => SceneHelper.GetScenePath("cards/overlays/" + base.Id.Entry.ToLowerInvariant());
+ 
+ 	public int? FloorAddedToDeck
+ 	{
+
+$$DIFF src/Core/Models/CharacterModel.cs
+
+--- a/src\Core\Models\CharacterModel.cs
++++ b/src\Core\Models\CharacterModel.cs
+@@ -49,7 +49,7 @@
+ 
+ 	public LocString EventDeathPreventionLine => new LocString("characters", base.Id.Entry + ".eventDeathPrevention");
+ 
+-	public string TrailPath => SceneHelper.GetScenePath("vfx/card_trail_" + base.Id.Entry.ToLower());
++	public string TrailPath => SceneHelper.GetScenePath("vfx/card_trail_" + base.Id.Entry.ToLowerInvariant());
+ 
+ 	public abstract int StartingHp { get; }
+ 
+@@ -75,39 +75,39 @@
+ 
+ 	public virtual IReadOnlyList<PotionModel> StartingPotions => Array.Empty<PotionModel>();
+ 
+-	private string VisualsPath => SceneHelper.GetScenePath("creature_visuals/" + base.Id.Entry.ToLower());
+-
+-	private string IconTexturePath => ImageHelper.GetImagePath("ui/top_panel/character_icon_" + base.Id.Entry.ToLower() + ".png");
++	private string VisualsPath => SceneHelper.GetScenePath("creature_visuals/" + base.Id.Entry.ToLowerInvariant());
++
++	private string IconTexturePath => ImageHelper.GetImagePath("ui/top_panel/character_icon_" + base.Id.Entry.ToLowerInvariant() + ".png");
+ 
+ 	public Texture2D IconTexture => PreloadManager.Cache.GetTexture2D(IconTexturePath);
+ 
+-	private string IconOutlineTexturePath => ImageHelper.GetImagePath("ui/top_panel/character_icon_" + base.Id.Entry.ToLower() + "_outline.png");
++	private string IconOutlineTexturePath => ImageHelper.GetImagePath("ui/top_panel/character_icon_" + base.Id.Entry.ToLowerInvariant() + "_outline.png");
+ 
+ 	public Texture2D IconOutlineTexture => PreloadManager.Cache.GetTexture2D(IconOutlineTexturePath);
+ 
+-	private string IconPath => SceneHelper.GetScenePath("ui/character_icons/" + base.Id.Entry.ToLower() + "_icon");
++	private string IconPath => SceneHelper.GetScenePath("ui/character_icons/" + base.Id.Entry.ToLowerInvariant() + "_icon");
+ 
+ 	public Control Icon => PreloadManager.Cache.GetScene(IconPath).Instantiate<Control>(PackedScene.GenEditState.Disabled);
+ 
+-	public string EnergyCounterPath => SceneHelper.GetScenePath("combat/energy_counters/" + base.Id.Entry.ToLower() + "_energy_counter");
+-
+-	public string MerchantAnimPath => SceneHelper.GetScenePath("merchant/characters/" + base.Id.Entry.ToLower() + "_merchant");
+-
+-	public string RestSiteAnimPath => SceneHelper.GetScenePath("rest_site/characters/" + base.Id.Entry.ToLower() + "_rest_site");
+-
+-	private string ArmPointingTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLower() + "_point.png");
++	public string EnergyCounterPath => SceneHelper.GetScenePath("combat/energy_counters/" + base.Id.Entry.ToLowerInvariant() + "_energy_counter");
++
++	public string MerchantAnimPath => SceneHelper.GetScenePath("merchant/characters/" + base.Id.Entry.ToLowerInvariant() + "_merchant");
++
++	public string RestSiteAnimPath => SceneHelper.GetScenePath("rest_site/characters/" + base.Id.Entry.ToLowerInvariant() + "_rest_site");
++
++	private string ArmPointingTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLowerInvariant() + "_point.png");
+ 
+ 	public Texture2D ArmPointingTexture => PreloadManager.Cache.GetTexture2D(ArmPointingTexturePath);
+ 
+-	private string ArmRockTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLower() + "_rock.png");
++	private string ArmRockTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLowerInvariant() + "_rock.png");
+ 
+ 	public Texture2D ArmRockTexture => PreloadManager.Cache.GetTexture2D(ArmRockTexturePath);
+ 
+-	private string ArmPaperTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLower() + "_paper.png");
++	private string ArmPaperTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLowerInvariant() + "_paper.png");
+ 
+ 	public Texture2D ArmPaperTexture => PreloadManager.Cache.GetTexture2D(ArmPaperTexturePath);
+ 
+-	private string ArmScissorsTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLower() + "_scissors.png");
++	private string ArmScissorsTexturePath => ImageHelper.GetImagePath("ui/hands/multiplayer_hand_" + base.Id.Entry.ToLowerInvariant() + "_scissors.png");
+ 
+ 	public Texture2D ArmScissorsTexture => PreloadManager.Cache.GetTexture2D(ArmScissorsTexturePath);
+ 
+@@ -115,23 +115,23 @@
+ 
+ 	protected virtual IEnumerable<string> ExtraAssetPaths => Array.Empty<string>();
+ 
+-	public string CharacterSelectTitle => base.Id.Entry.ToUpper() + ".title";
+-
+-	public string CharacterSelectDesc => base.Id.Entry.ToUpper() + ".description";
+-
+-	public string CharacterSelectBg => SceneHelper.GetScenePath("screens/char_select/char_select_bg_" + base.Id.Entry.ToLower());
+-
+-	protected virtual string CharacterSelectIconPath => ImageHelper.GetImagePath("packed/character_select/char_select_" + base.Id.Entry.ToLower() + ".png");
++	public string CharacterSelectTitle => base.Id.Entry.ToUpperInvariant() + ".title";
++
++	public string CharacterSelectDesc => base.Id.Entry.ToUpperInvariant() + ".description";
++
++	public string CharacterSelectBg => SceneHelper.GetScenePath("screens/char_select/char_select_bg_" + base.Id.Entry.ToLowerInvariant());
++
++	protected virtual string CharacterSelectIconPath => ImageHelper.GetImagePath("packed/character_select/char_select_" + base.Id.Entry.ToLowerInvariant() + ".png");
+ 
+ 	public CompressedTexture2D CharacterSelectIcon => ResourceLoader.Load<CompressedTexture2D>(CharacterSelectIconPath, null, ResourceLoader.CacheMode.Reuse);
+ 
+-	protected virtual string CharacterSelectLockedIconPath => ImageHelper.GetImagePath("packed/character_select/char_select_" + base.Id.Entry.ToLower() + "_locked.png");
++	protected virtual string CharacterSelectLockedIconPath => ImageHelper.GetImagePath("packed/character_select/char_select_" + base.Id.Entry.ToLowerInvariant() + "_locked.png");
+ 
+ 	public CompressedTexture2D CharacterSelectLockedIcon => ResourceLoader.Load<CompressedTexture2D>(CharacterSelectLockedIconPath, null, ResourceLoader.CacheMode.Reuse);
+ 
+-	public string CharacterSelectTransitionPath => "res://materials/transitions/" + base.Id.Entry.ToLower() + "_transition_mat.tres";
+-
+-	protected virtual string MapMarkerPath => ImageHelper.GetImagePath("packed/map/icons/map_marker_" + base.Id.Entry.ToLower() + ".png");
++	public string CharacterSelectTransitionPath => "res://materials/transitions/" + base.Id.Entry.ToLowerInvariant() + "_transition_mat.tres";
++
++	protected virtual string MapMarkerPath => ImageHelper.GetImagePath("packed/map/icons/map_marker_" + base.Id.Entry.ToLowerInvariant() + ".png");
+ 
+ 	public CompressedTexture2D MapMarker => PreloadManager.Cache.GetCompressedTexture2D(MapMarkerPath);
+ 
+@@ -151,15 +151,15 @@
+ 
+ 	public abstract float CastAnimDelay { get; }
+ 
+-	public virtual string CharacterSelectSfx => $"event:/sfx/characters/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_select";
+-
+-	public string AttackSfx => $"event:/sfx/characters/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_attack";
+-
+-	public string CastSfx => $"event:/sfx/characters/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_cast";
+-
+-	public string DeathSfx => $"event:/sfx/characters/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_die";
+-
+-	public virtual string CharacterTransitionSfx => "event:/sfx/ui/wipe_" + base.Id.Entry.ToLower();
++	public virtual string CharacterSelectSfx => $"event:/sfx/characters/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_select";
++
++	public string AttackSfx => $"event:/sfx/characters/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_attack";
++
++	public string CastSfx => $"event:/sfx/characters/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_cast";
++
++	public string DeathSfx => $"event:/sfx/characters/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_die";
++
++	public virtual string CharacterTransitionSfx => "event:/sfx/ui/wipe_" + base.Id.Entry.ToLowerInvariant();
+ 
+ 	public override bool ShouldReceiveCombatHooks => false;
+ 
+
+$$DIFF src/Core/Models/EnchantmentModel.cs
+
+--- a/src\Core\Models\EnchantmentModel.cs
++++ b/src\Core\Models\EnchantmentModel.cs
+@@ -74,9 +74,9 @@
+ 
+ 	public static string MissingIconPath => ImageHelper.GetImagePath("enchantments/missing_enchantment.png");
+ 
+-	public string IntendedIconPath => ImageHelper.GetImagePath("enchantments/" + base.Id.Entry.ToLower() + ".png");
+-
+-	private string BetaIconPath => ImageHelper.GetImagePath("enchantments/beta/" + base.Id.Entry.ToLower() + ".png");
++	public string IntendedIconPath => ImageHelper.GetImagePath("enchantments/" + base.Id.Entry.ToLowerInvariant() + ".png");
++
++	private string BetaIconPath => ImageHelper.GetImagePath("enchantments/beta/" + base.Id.Entry.ToLowerInvariant() + ".png");
+ 
+ 	public string IconPath
+ 	{
+
+$$DIFF src/Core/Models/EncounterModel.cs
+
+--- a/src\Core\Models\EncounterModel.cs
++++ b/src\Core\Models\EncounterModel.cs
+@@ -123,7 +123,7 @@
+ 
+ 	public virtual bool FullyCenterPlayers => false;
+ 
+-	private string ScenePath => SceneHelper.GetScenePath("encounters/" + base.Id.Entry.ToLower());
++	private string ScenePath => SceneHelper.GetScenePath("encounters/" + base.Id.Entry.ToLowerInvariant());
+ 
+ 	protected virtual bool HasCustomBackground => false;
+ 
+@@ -135,7 +135,7 @@
+ 
+ 	public bool HasAmbientSfx => AmbientSfx != "";
+ 
+-	public virtual string BossNodePath => $"res://animations/map/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_node_skel_data.tres";
++	public virtual string BossNodePath => $"res://animations/map/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_node_skel_data.tres";
+ 
+ 	public virtual MegaSkeletonDataResource? BossNodeSpineResource
+ 	{
+@@ -239,7 +239,7 @@
+ 
+ 	private BackgroundAssets CreateBackgroundAssetsForCustom(Rng rng)
+ 	{
+-		return new BackgroundAssets(base.Id.Entry.ToLower(), rng);
++		return new BackgroundAssets(base.Id.Entry.ToLowerInvariant(), rng);
+ 	}
+ 
+ 	public Control CreateScene()
+
+$$DIFF src/Core/Models/Encounters/DoormakerBoss.cs
+
+--- a/src\Core\Models\Encounters\DoormakerBoss.cs
++++ b/src\Core\Models\Encounters\DoormakerBoss.cs
+@@ -18,7 +18,7 @@
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override string CustomBgm => "event:/music/act3_boss_queen";
+ 
+
+$$DIFF src/Core/Models/Encounters/KaiserCrabBoss.cs
+
+--- a/src\Core\Models\Encounters\KaiserCrabBoss.cs
++++ b/src\Core\Models\Encounters\KaiserCrabBoss.cs
+@@ -12,7 +12,7 @@
+ 
+ 	private const string _rocketSlot = "rocket";
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	protected override bool HasCustomBackground => true;
+ 
+
+$$DIFF src/Core/Models/Encounters/KnowledgeDemonBoss.cs
+
+--- a/src\Core\Models\Encounters\KnowledgeDemonBoss.cs
++++ b/src\Core\Models\Encounters\KnowledgeDemonBoss.cs
+@@ -12,7 +12,7 @@
+ 
+ 	public override string CustomBgm => "event:/music/act2_boss_knowledge_demon";
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+
+$$DIFF src/Core/Models/Encounters/LagavulinMatriarchBoss.cs
+
+--- a/src\Core\Models\Encounters\LagavulinMatriarchBoss.cs
++++ b/src\Core\Models\Encounters\LagavulinMatriarchBoss.cs
+@@ -9,7 +9,7 @@
+ {
+ 	public override RoomType RoomType => RoomType.Boss;
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+
+$$DIFF src/Core/Models/Encounters/SoulFyshBoss.cs
+
+--- a/src\Core\Models\Encounters\SoulFyshBoss.cs
++++ b/src\Core\Models\Encounters\SoulFyshBoss.cs
+@@ -7,7 +7,7 @@
+ 
+ public sealed class SoulFyshBoss : EncounterModel
+ {
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+
+$$DIFF src/Core/Models/Encounters/TestSubjectBoss.cs
+
+--- a/src\Core\Models\Encounters\TestSubjectBoss.cs
++++ b/src\Core\Models\Encounters\TestSubjectBoss.cs
+@@ -9,7 +9,7 @@
+ {
+ 	public override RoomType RoomType => RoomType.Boss;
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override string CustomBgm => "event:/music/act3_boss_test_subject";
+ 
+
+$$DIFF src/Core/Models/Encounters/TheKinBoss.cs
+
+--- a/src\Core\Models\Encounters\TheKinBoss.cs
++++ b/src\Core\Models\Encounters\TheKinBoss.cs
+@@ -16,7 +16,7 @@
+ 
+ 	public override string CustomBgm => "event:/music/act1_boss_the_kin";
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+
+$$DIFF src/Core/Models/Encounters/VantomBoss.cs
+
+--- a/src\Core\Models\Encounters\VantomBoss.cs
++++ b/src\Core\Models\Encounters\VantomBoss.cs
+@@ -10,7 +10,7 @@
+ {
+ 	public override RoomType RoomType => RoomType.Boss;
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+
+$$DIFF src/Core/Models/Encounters/WaterfallGiantBoss.cs
+
+--- a/src\Core\Models\Encounters\WaterfallGiantBoss.cs
++++ b/src\Core\Models\Encounters\WaterfallGiantBoss.cs
+@@ -11,7 +11,7 @@
+ 
+ 	public override string CustomBgm => "event:/music/act1_b_boss_waterfall_giant";
+ 
+-	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLower() + "_icon";
++	public override string BossNodePath => "res://images/map/placeholder/" + base.Id.Entry.ToLowerInvariant() + "_icon";
+ 
+ 	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+ 
+
+$$DIFF src/Core/Models/EventModel.cs
+
+--- a/src\Core\Models\EventModel.cs
++++ b/src\Core\Models\EventModel.cs
+@@ -137,7 +137,7 @@
+ 		EventLayoutType.Default => "res://scenes/events/default_event_layout.tscn", 
+ 		EventLayoutType.Combat => "res://scenes/events/combat_event_layout.tscn", 
+ 		EventLayoutType.Ancient => "res://scenes/events/ancient_event_layout.tscn", 
+-		EventLayoutType.Custom => SceneHelper.GetScenePath("events/custom/" + base.Id.Entry.ToLower()), 
++		EventLayoutType.Custom => SceneHelper.GetScenePath("events/custom/" + base.Id.Entry.ToLowerInvariant()), 
+ 		_ => throw new ArgumentOutOfRangeException(), 
+ 	};
+ 
+@@ -158,11 +158,11 @@
+ 		}
+ 	}
+ 
+-	private string InitialPortraitPath => ImageHelper.GetImagePath("events/" + base.Id.Entry.ToLower() + ".png");
+-
+-	private string BackgroundScenePath => SceneHelper.GetScenePath("events/background_scenes/" + base.Id.Entry.ToLower());
+-
+-	private string VfxPath => SceneHelper.GetScenePath("vfx/events/" + base.Id.Entry.ToLower() + "_vfx");
++	private string InitialPortraitPath => ImageHelper.GetImagePath("events/" + base.Id.Entry.ToLowerInvariant() + ".png");
++
++	private string BackgroundScenePath => SceneHelper.GetScenePath("events/background_scenes/" + base.Id.Entry.ToLowerInvariant());
++
++	private string VfxPath => SceneHelper.GetScenePath("vfx/events/" + base.Id.Entry.ToLowerInvariant() + "_vfx");
+ 
+ 	public bool HasVfx => ResourceLoader.Exists(VfxPath);
+ 
+
+$$DIFF src/Core/Models/Events/ColorfulPhilosophers.cs
+
+--- a/src\Core\Models\Events\ColorfulPhilosophers.cs
++++ b/src\Core\Models\Events\ColorfulPhilosophers.cs
+@@ -34,7 +34,7 @@
+ 		{
+ 			if (character.CardPool != cardPool && list2.Contains(cardPool))
+ 			{
+-				list.Add(new EventOption(this, () => OfferRewards(cardPool), "COLORFUL_PHILOSOPHERS.pages.INITIAL.options." + cardPool.EnergyColorName.ToUpper()));
++				list.Add(new EventOption(this, () => OfferRewards(cardPool), "COLORFUL_PHILOSOPHERS.pages.INITIAL.options." + cardPool.EnergyColorName.ToUpperInvariant()));
+ 			}
+ 		}
+ 		int num = Mathf.Min(3, list.Count);
+
+$$DIFF src/Core/Models/ModifierModel.cs
+
+--- a/src\Core\Models\ModifierModel.cs
++++ b/src\Core\Models\ModifierModel.cs
+@@ -47,7 +47,7 @@
+ 		}
+ 	}
+ 
+-	protected virtual string IconPath => ImageHelper.GetImagePath("packed/modifiers/" + base.Id.Entry.ToLower() + ".png");
++	protected virtual string IconPath => ImageHelper.GetImagePath("packed/modifiers/" + base.Id.Entry.ToLowerInvariant() + ".png");
+ 
+ 	private static string MissingIconPath => ImageHelper.GetImagePath("powers/missing_power.png");
+ 
+
+$$DIFF src/Core/Models/MonsterModel.cs
+
+--- a/src\Core\Models\MonsterModel.cs
++++ b/src\Core\Models\MonsterModel.cs
+@@ -60,7 +60,7 @@
+ 
+ 	public virtual float HpBarSizeReduction => 0f;
+ 
+-	protected virtual string VisualsPath => SceneHelper.GetScenePath("creature_visuals/" + base.Id.Entry.ToLower());
++	protected virtual string VisualsPath => SceneHelper.GetScenePath("creature_visuals/" + base.Id.Entry.ToLowerInvariant());
+ 
+ 	public virtual IEnumerable<string> AssetPaths
+ 	{
+@@ -132,11 +132,11 @@
+ 
+ 	public virtual string BestiaryAttackAnimId => "attack";
+ 
+-	protected virtual string AttackSfx => $"event:/sfx/enemy/enemy_attacks/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_attack";
+-
+-	protected virtual string CastSfx => $"event:/sfx/enemy/enemy_attacks/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_cast";
+-
+-	public virtual string DeathSfx => $"event:/sfx/enemy/enemy_attacks/{base.Id.Entry.ToLower()}/{base.Id.Entry.ToLower()}_die";
++	protected virtual string AttackSfx => $"event:/sfx/enemy/enemy_attacks/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_attack";
++
++	protected virtual string CastSfx => $"event:/sfx/enemy/enemy_attacks/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_cast";
++
++	public virtual string DeathSfx => $"event:/sfx/enemy/enemy_attacks/{base.Id.Entry.ToLowerInvariant()}/{base.Id.Entry.ToLowerInvariant()}_die";
+ 
+ 	public virtual bool HasDeathSfx => true;
+ 
+@@ -156,7 +156,7 @@
+ 
+ 	public virtual DamageSfxType TakeDamageSfxType => DamageSfxType.Armor;
+ 
+-	public virtual string TakeDamageSfx => "event:/sfx/enemy/enemy_impact_enemy_size/enemy_impact_" + StringHelper.Slugify(TakeDamageSfxType.ToString()).ToLower();
++	public virtual string TakeDamageSfx => "event:/sfx/enemy/enemy_impact_enemy_size/enemy_impact_" + StringHelper.Slugify(TakeDamageSfxType.ToString()).ToLowerInvariant();
+ 
+ 	public Creature Creature
+ 	{
+
+$$DIFF src/Core/Models/Monsters/Doormaker.cs
+
+--- a/src\Core\Models\Monsters\Doormaker.cs
++++ b/src\Core\Models\Monsters\Doormaker.cs
+@@ -10,11 +10,13 @@
+ using MegaCrit.Sts2.Core.Commands;
+ using MegaCrit.Sts2.Core.Entities.Ascension;
+ using MegaCrit.Sts2.Core.Entities.Creatures;
++using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+ using MegaCrit.Sts2.Core.Helpers;
+ using MegaCrit.Sts2.Core.Localization;
+ using MegaCrit.Sts2.Core.Models.Powers;
+ using MegaCrit.Sts2.Core.MonsterMoves.Intents;
+ using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
++using MegaCrit.Sts2.Core.Nodes.Audio;
+ using MegaCrit.Sts2.Core.Nodes.Combat;
+ using MegaCrit.Sts2.Core.Nodes.Rooms;
+ 
+@@ -22,6 +24,8 @@
+ 
+ public sealed class Doormaker : MonsterModel
+ {
++	private const string _doormakerTrackName = "queen_progress";
++
+ 	private readonly string[] _visualsPaths = new string[3] { "monsters/beta/door_maker_placeholder_2.png", "monsters/beta/door_maker_placeholder_3.png", "monsters/beta/door_maker_placeholder_4.png" };
+ 
+ 	private static readonly List<string> _whatIsItLines;
+@@ -159,9 +163,20 @@
+ 		}
+ 	}
+ 
++	public override Task AfterDeath(PlayerChoiceContext choiceContext, Creature creature, bool wasRemovalPrevented, float deathAnimLength)
++	{
++		if (creature != base.Creature)
++		{
++			return Task.CompletedTask;
++		}
++		NRunMusicController.Instance?.UpdateMusicParameter("queen_progress", 5f);
++		return Task.CompletedTask;
++	}
++
+ 	public async Task AnimIn()
+ 	{
+ 		NCreature nCreature = NCombatRoom.Instance?.GetCreatureNode(base.Creature);
++		NRunMusicController.Instance?.UpdateMusicParameter("queen_progress", 1f);
+ 		if (nCreature != null)
+ 		{
+ 			Vector2 scale = nCreature.Visuals.Body.Scale;
+
+$$DIFF src/Core/Models/OrbModel.cs
+
+--- a/src\Core\Models\OrbModel.cs
++++ b/src\Core\Models\OrbModel.cs
+@@ -63,11 +63,11 @@
+ 		}
+ 	}
+ 
+-	private string DebugPassiveSfx => base.Id.Entry.ToLower() + "_passive.mp3";
+-
+-	private string DebugEvokeSfx => base.Id.Entry.ToLower() + "_evoke.mp3";
+-
+-	private string DebugChannelSfx => base.Id.Entry.ToLower() + "_channel.mp3";
++	private string DebugPassiveSfx => base.Id.Entry.ToLowerInvariant() + "_passive.mp3";
++
++	private string DebugEvokeSfx => base.Id.Entry.ToLowerInvariant() + "_evoke.mp3";
++
++	private string DebugChannelSfx => base.Id.Entry.ToLowerInvariant() + "_channel.mp3";
+ 
+ 	protected virtual string PassiveSfx => "";
+ 
+@@ -102,9 +102,9 @@
+ 		}
+ 	}
+ 
+-	private string IconPath => ImageHelper.GetImagePath("orbs/" + base.Id.Entry.ToLower() + ".png");
+-
+-	private string SpritePath => SceneHelper.GetScenePath("orbs/orb_visuals/" + base.Id.Entry.ToLower());
++	private string IconPath => ImageHelper.GetImagePath("orbs/" + base.Id.Entry.ToLowerInvariant() + ".png");
++
++	private string SpritePath => SceneHelper.GetScenePath("orbs/orb_visuals/" + base.Id.Entry.ToLowerInvariant());
+ 
+ 	public CompressedTexture2D Icon => PreloadManager.Cache.GetCompressedTexture2D(IconPath);
+ 
+
+$$DIFF src/Core/Models/PotionModel.cs
+
+--- a/src\Core\Models\PotionModel.cs
++++ b/src\Core\Models\PotionModel.cs
+@@ -64,9 +64,9 @@
+ 		}
+ 	}
+ 
+-	private string PackedImagePath => ImageHelper.GetImagePath("atlases/potion_atlas.sprites/" + base.Id.Entry.ToLower() + ".tres");
+-
+-	private string PackedOutlinePath => ImageHelper.GetImagePath("atlases/potion_outline_atlas.sprites/" + base.Id.Entry.ToLower() + ".tres");
++	private string PackedImagePath => ImageHelper.GetImagePath("atlases/potion_atlas.sprites/" + base.Id.Entry.ToLowerInvariant() + ".tres");
++
++	private string PackedOutlinePath => ImageHelper.GetImagePath("atlases/potion_outline_atlas.sprites/" + base.Id.Entry.ToLowerInvariant() + ".tres");
+ 
+ 	public string ImagePath => PackedImagePath;
+ 
+
+$$DIFF src/Core/Models/PowerModel.cs
+
+--- a/src\Core\Models\PowerModel.cs
++++ b/src\Core\Models\PowerModel.cs
+@@ -94,11 +94,11 @@
+ 		}
+ 	}
+ 
+-	public string PackedIconPath => ImageHelper.GetImagePath("atlases/power_atlas.sprites/" + base.Id.Entry.ToLower() + ".tres");
+-
+-	private string BigIconPath => ImageHelper.GetImagePath("powers/" + base.Id.Entry.ToLower() + ".png");
+-
+-	private string BigBetaIconPath => ImageHelper.GetImagePath("powers/beta/" + base.Id.Entry.ToLower() + ".png");
++	public string PackedIconPath => ImageHelper.GetImagePath("atlases/power_atlas.sprites/" + base.Id.Entry.ToLowerInvariant() + ".tres");
++
++	private string BigIconPath => ImageHelper.GetImagePath("powers/" + base.Id.Entry.ToLowerInvariant() + ".png");
++
++	private string BigBetaIconPath => ImageHelper.GetImagePath("powers/beta/" + base.Id.Entry.ToLowerInvariant() + ".png");
+ 
+ 	private static string MissingIconPath => ImageHelper.GetImagePath("powers/missing_power.png");
+ 
+
+$$DIFF src/Core/Models/Powers/BeaconOfHopePower.cs
+
+--- a/src\Core\Models\Powers\BeaconOfHopePower.cs
++++ b/src\Core\Models\Powers\BeaconOfHopePower.cs
+@@ -16,16 +16,21 @@
+ 
+ 	public override async Task AfterBlockGained(Creature creature, decimal amount, ValueProp props, CardModel? cardSource)
+ 	{
+-		if (amount <= 0m || creature != base.Owner || base.CombatState.CurrentSide != base.Owner.Side)
++		if (amount < 1m || creature != base.Owner || base.CombatState.CurrentSide != base.Owner.Side)
+ 		{
+ 			return;
+ 		}
+ 		IEnumerable<Creature> enumerable = from c in base.CombatState.GetTeammatesOf(base.Owner)
+ 			where c != null && c.IsAlive && c.IsPlayer && c.Player.Creature != base.Owner
+ 			select c;
++		decimal amountToGive = amount * 0.5m * (decimal)base.Amount;
++		if (amountToGive < 1m)
++		{
++			return;
++		}
+ 		foreach (Creature item in enumerable)
+ 		{
+-			await CreatureCmd.GainBlock(item, amount * 0.5m * (decimal)base.Amount, ValueProp.Unpowered, null);
++			await CreatureCmd.GainBlock(item, amountToGive, ValueProp.Unpowered, null);
+ 		}
+ 	}
+ }
+
+$$DIFF src/Core/Models/RelicModel.cs
+
+--- a/src\Core\Models\RelicModel.cs
++++ b/src\Core\Models\RelicModel.cs
+@@ -121,7 +121,7 @@
+ 		}
+ 	}
+ 
+-	protected virtual string IconBaseName => base.Id.Entry.ToLower();
++	protected virtual string IconBaseName => base.Id.Entry.ToLowerInvariant();
+ 
+ 	public virtual string PackedIconPath => ImageHelper.GetImagePath("atlases/relic_atlas.sprites/" + IconBaseName + ".tres");
+ 
+
+$$DIFF src/Core/Models/Relics/PaelsWing.cs
+
+--- a/src\Core\Models\Relics\PaelsWing.cs
++++ b/src\Core\Models\Relics\PaelsWing.cs
+@@ -83,7 +83,7 @@
+ 
+ 	private async Task OnSacrificeSynchronized()
+ 	{
+-		RunManager.Instance.OneOffSynchronizer.SynchronizePaelsWingSacrifice(this);
++		RunManager.Instance.RewardSynchronizer.SyncLocalPaelsWingSacrifice(this);
+ 		await OnSacrifice();
+ 	}
+ 
+
+$$DIFF src/Core/Models/Relics/WhisperingEarring.cs
+
+--- a/src\Core\Models\Relics\WhisperingEarring.cs
++++ b/src\Core\Models\Relics\WhisperingEarring.cs
+@@ -82,7 +82,7 @@
+ 		return card.TargetType switch
+ 		{
+ 			TargetType.AnyEnemy => combatState.HittableEnemies.FirstOrDefault(), 
+-			TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where((Creature c) => c.IsAlive && c != base.Owner.Creature)), 
++			TargetType.AnyAlly => combatTargets.NextItem(combatState.Allies.Where((Creature c) => c != null && c.IsAlive && c.IsPlayer && c != base.Owner.Creature)), 
+ 			TargetType.AnyPlayer => base.Owner.Creature, 
+ 			_ => null, 
+ 		};
+
+$$DIFF src/Core/MonsterMoves/Intents/AbstractIntent.cs
+
+--- a/src\Core\MonsterMoves\Intents\AbstractIntent.cs
++++ b/src\Core\MonsterMoves\Intents\AbstractIntent.cs
+@@ -58,7 +58,7 @@
+ 
+ 	public virtual string GetAnimation(IEnumerable<Creature> targets, Creature owner)
+ 	{
+-		return _cachedAnimationName ?? (_cachedAnimationName = IntentPrefix.ToLower());
++		return _cachedAnimationName ?? (_cachedAnimationName = IntentPrefix.ToLowerInvariant());
+ 	}
+ 
+ 	public HoverTip GetHoverTip(IEnumerable<Creature> targets, Creature owner)
+
+$$DIFF src/Core/MonsterMoves/Intents/DeathBlowIntent.cs
+
+--- a/src\Core\MonsterMoves\Intents\DeathBlowIntent.cs
++++ b/src\Core\MonsterMoves\Intents\DeathBlowIntent.cs
+@@ -23,7 +23,7 @@
+ 
+ 	public override string GetAnimation(IEnumerable<Creature> targets, Creature owner)
+ 	{
+-		return _cachedAnimationName ?? (_cachedAnimationName = IntentPrefix.ToLower());
++		return _cachedAnimationName ?? (_cachedAnimationName = IntentPrefix.ToLowerInvariant());
+ 	}
+ 
+ 	public DeathBlowIntent(Func<decimal> damageCalc)
+
+$$DIFF src/Core/Multiplayer/Game/OneOffSynchronizer.cs
+
+--- a/src\Core\Multiplayer\Game\OneOffSynchronizer.cs
++++ b/src\Core\Multiplayer\Game\OneOffSynchronizer.cs
+@@ -6,14 +6,11 @@
+ using MegaCrit.Sts2.Core.Entities.Ascension;
+ using MegaCrit.Sts2.Core.Entities.Gold;
+ using MegaCrit.Sts2.Core.Entities.Players;
+-using MegaCrit.Sts2.Core.Extensions;
+ using MegaCrit.Sts2.Core.Helpers;
+ using MegaCrit.Sts2.Core.Hooks;
+-using MegaCrit.Sts2.Core.Logging;
+ using MegaCrit.Sts2.Core.Map;
+ using MegaCrit.Sts2.Core.Models;
+ using MegaCrit.Sts2.Core.Models.Cards;
+-using MegaCrit.Sts2.Core.Models.Relics;
+ using MegaCrit.Sts2.Core.Multiplayer.Messages.Game;
+ using MegaCrit.Sts2.Core.Runs;
+ 
+@@ -38,14 +35,12 @@
+ 		_gameService = gameService;
+ 		_messageBuffer = messageBuffer;
+ 		messageBuffer.RegisterMessageHandler<MerchantCardRemovalMessage>(HandleMerchantCardRemoval);
+-		messageBuffer.RegisterMessageHandler<PaelsWingSacrificeMessage>(HandlePaelsWingSacrifice);
+ 		messageBuffer.RegisterMessageHandler<TreasureChestOpenedMessage>(HandleTreasureChestOpenedMessage);
+ 	}
+ 
+ 	public void Dispose()
+ 	{
+ 		_messageBuffer.UnregisterMessageHandler<MerchantCardRemovalMessage>(HandleMerchantCardRemoval);
+-		_messageBuffer.UnregisterMessageHandler<PaelsWingSacrificeMessage>(HandlePaelsWingSacrifice);
+ 		_messageBuffer.UnregisterMessageHandler<TreasureChestOpenedMessage>(HandleTreasureChestOpenedMessage);
+ 	}
+ 
+@@ -84,46 +79,6 @@
+ 			player.ExtraFields.CardShopRemovalsUsed++;
+ 		}
+ 		return card != null;
+-	}
+-
+-	public void SynchronizePaelsWingSacrifice(PaelsWing paelsWing)
+-	{
+-		int num = paelsWing.Owner.Relics.IndexOf(paelsWing);
+-		if (num < 0)
+-		{
+-			throw new InvalidOperationException();
+-		}
+-		PaelsWingSacrificeMessage message = new PaelsWingSacrificeMessage
+-		{
+-			relicIndex = (uint)num,
+-			Location = _messageBuffer.CurrentLocation
+-		};
+-		_gameService.SendMessage(message);
+-	}
+-
+-	private void HandlePaelsWingSacrifice(PaelsWingSacrificeMessage message, ulong senderId)
+-	{
+-		Player player = _playerCollection.GetPlayer(senderId);
+-		if (player == LocalPlayer)
+-		{
+-			throw new InvalidOperationException("PaelsWingSacrificeMessage should not be sent to the player doing the sacrifice!");
+-		}
+-		if (message.relicIndex >= player.Relics.Count)
+-		{
+-			Log.Error($"PaelsWingSacrificeMessage has index {message.relicIndex} which is out of bounds! Player {senderId} has {player.Relics.Count} relics");
+-		}
+-		else
+-		{
+-			RelicModel relicModel = player.Relics[(int)message.relicIndex];
+-			if (!(relicModel is PaelsWing paelsWing))
+-			{
+-				Log.Error($"PaelsWingSacrificeMessage has index {message.relicIndex} which is not Pael's Wing! It is {relicModel}");
+-			}
+-			else
+-			{
+-				TaskHelper.RunSafely(paelsWing.OnSacrifice());
+-			}
+-		}
+ 	}
+ 
+ 	public Task<int> DoLocalTreasureRoomRewards()
+
+$$DIFF src/Core/Multiplayer/Game/RewardSynchronizer.cs
+
+--- a/src\Core\Multiplayer\Game\RewardSynchronizer.cs
++++ b/src\Core\Multiplayer\Game\RewardSynchronizer.cs
+@@ -7,10 +7,12 @@
+ using MegaCrit.Sts2.Core.Commands;
+ using MegaCrit.Sts2.Core.Entities.Cards;
+ using MegaCrit.Sts2.Core.Entities.Players;
++using MegaCrit.Sts2.Core.Extensions;
+ using MegaCrit.Sts2.Core.Helpers;
+ using MegaCrit.Sts2.Core.Localization;
+ using MegaCrit.Sts2.Core.Logging;
+ using MegaCrit.Sts2.Core.Models;
++using MegaCrit.Sts2.Core.Models.Relics;
+ using MegaCrit.Sts2.Core.Multiplayer.Messages.Game;
+ using MegaCrit.Sts2.Core.Multiplayer.Messages.Game.Sync;
+ using MegaCrit.Sts2.Core.Rewards;
+@@ -31,6 +33,8 @@
+ 		public GoldLostMessage? goldLostMessage;
+ 
+ 		public CardRemovedMessage? cardRemovedMessage;
++
++		public PaelsWingSacrificeMessage? paelsWingSacrificeMessage;
+ 	}
+ 
+ 	private readonly RunLocationTargetedMessageBuffer _messageBuffer;
+@@ -54,12 +58,14 @@
+ 		_messageBuffer.RegisterMessageHandler<RewardObtainedMessage>(HandleRewardObtainedMessage);
+ 		_messageBuffer.RegisterMessageHandler<GoldLostMessage>(HandleGoldLostMessage);
+ 		_messageBuffer.RegisterMessageHandler<CardRemovedMessage>(HandleCardRemovedMessage);
++		messageBuffer.RegisterMessageHandler<PaelsWingSacrificeMessage>(HandlePaelsWingSacrifice);
+ 		CombatManager.Instance.CombatEnded += OnCombatEnded;
+ 	}
+ 
+ 	public void Dispose()
+ 	{
+ 		_messageBuffer.UnregisterMessageHandler<RewardObtainedMessage>(HandleRewardObtainedMessage);
++		_messageBuffer.UnregisterMessageHandler<PaelsWingSacrificeMessage>(HandlePaelsWingSacrifice);
+ 		_messageBuffer.UnregisterMessageHandler<GoldLostMessage>(HandleGoldLostMessage);
+ 		_messageBuffer.UnregisterMessageHandler<CardRemovedMessage>(HandleCardRemovedMessage);
+ 		CombatManager.Instance.CombatEnded -= OnCombatEnded;
+@@ -294,6 +300,56 @@
+ 		TaskHelper.RunSafely(DoCardRemoval(player));
+ 	}
+ 
++	public void SyncLocalPaelsWingSacrifice(PaelsWing paelsWing)
++	{
++		int num = paelsWing.Owner.Relics.IndexOf(paelsWing);
++		if (num < 0)
++		{
++			throw new InvalidOperationException();
++		}
++		PaelsWingSacrificeMessage message = new PaelsWingSacrificeMessage
++		{
++			relicIndex = (uint)num,
++			Location = _messageBuffer.CurrentLocation
++		};
++		_gameService.SendMessage(message);
++	}
++
++	private void HandlePaelsWingSacrifice(PaelsWingSacrificeMessage message, ulong senderId)
++	{
++		if (CombatManager.Instance.IsInProgress)
++		{
++			BufferedMessage item = new BufferedMessage
++			{
++				senderId = senderId,
++				paelsWingSacrificeMessage = message
++			};
++			_bufferedMessages.Add(item);
++			return;
++		}
++		Player player = _playerCollection.GetPlayer(senderId);
++		if (player == LocalPlayer)
++		{
++			throw new InvalidOperationException("PaelsWingSacrificeMessage should not be sent to the player doing the sacrifice!");
++		}
++		if (message.relicIndex >= player.Relics.Count)
++		{
++			Log.Error($"PaelsWingSacrificeMessage has index {message.relicIndex} which is out of bounds! Player {senderId} has {player.Relics.Count} relics");
++		}
++		else
++		{
++			RelicModel relicModel = player.Relics[(int)message.relicIndex];
++			if (!(relicModel is PaelsWing paelsWing))
++			{
++				Log.Error($"PaelsWingSacrificeMessage has index {message.relicIndex} which is not Pael's Wing! It is {relicModel}");
++			}
++			else
++			{
++				TaskHelper.RunSafely(paelsWing.OnSacrifice());
++			}
++		}
++	}
++
+ 	private void OnCombatEnded(CombatRoom _)
+ 	{
+ 		foreach (BufferedMessage bufferedMessage in _bufferedMessages)
+@@ -309,6 +365,10 @@
+ 			else if (bufferedMessage.cardRemovedMessage != null)
+ 			{
+ 				HandleCardRemovedMessage(bufferedMessage.cardRemovedMessage, bufferedMessage.senderId);
++			}
++			else if (bufferedMessage.paelsWingSacrificeMessage != null)
++			{
++				HandlePaelsWingSacrifice(bufferedMessage.paelsWingSacrificeMessage, bufferedMessage.senderId);
+ 			}
+ 		}
+ 		_bufferedMessages.Clear();
+
+$$DIFF src/Core/Nodes/Combat/NMouseCardPlay.cs
+
+--- a/src\Core\Nodes\Combat\NMouseCardPlay.cs
++++ b/src\Core\Nodes\Combat\NMouseCardPlay.cs
+@@ -144,6 +144,10 @@
+ 			return;
+ 		}
+ 		await StartCardDrag();
++		if (_cancellationTokenSource.IsCancellationRequested)
++		{
++			return;
++		}
+ 		if (!base.Card.CanPlay(out UnplayableReason reason, out AbstractModel preventer))
+ 		{
+ 			CannotPlayThisCardFtueCheck(base.Card);
+@@ -158,13 +162,16 @@
+ 		base.CardNode.CardHighlight.AnimFlash();
+ 		TargetMode targetMode = ((!_skipStartCardDrag) ? (_isLeftMouseDown ? TargetMode.ReleaseMouseToTarget : TargetMode.ClickMouseToTarget) : TargetMode.ClickMouseToTarget);
+ 		await TargetSelection(targetMode);
+-		if (!IsCardInPlayZone())
+-		{
+-			CancelPlayCard();
+-		}
+ 		if (!_cancellationTokenSource.IsCancellationRequested)
+ 		{
+-			TryPlayCard(_target);
++			if (!IsCardInPlayZone())
++			{
++				CancelPlayCard();
++			}
++			if (!_cancellationTokenSource.IsCancellationRequested)
++			{
++				TryPlayCard(_target);
++			}
+ 		}
+ 	}
+ 
+@@ -267,7 +274,7 @@
+ 			await LerpToMouse(base.Holder);
+ 		}
+ 		while (!shouldFinishTargeting() && !_cancellationTokenSource.IsCancellationRequested && !IsCardInCancelZone());
+-		if (IsCardInCancelZone())
++		if (!_cancellationTokenSource.IsCancellationRequested && IsCardInCancelZone())
+ 		{
+ 			CancelPlayCard();
+ 		}
+
+$$DIFF src/Core/Nodes/CommonUi/NSearchBar.cs
+
+--- a/src\Core\Nodes\CommonUi\NSearchBar.cs
++++ b/src\Core\Nodes\CommonUi\NSearchBar.cs
+@@ -83,7 +83,7 @@
+ 	public static string Normalize(string text)
+ 	{
+ 		string input = NonSpaceWhitespaceCharacters().Replace(text.Trim(), " ");
+-		return ConsecutiveSpaces().Replace(input, " ").ToLower();
++		return ConsecutiveSpaces().Replace(input, " ").ToLowerInvariant();
+ 	}
+ 
+ 	public static string RemoveHtmlTags(string text)
+
+$$DIFF src/Core/Nodes/Debug/IBootstrapSettings.cs
+
+--- a/src\Core\Nodes\Debug\IBootstrapSettings.cs
++++ b/src\Core\Nodes\Debug\IBootstrapSettings.cs
+@@ -34,6 +34,8 @@
+ 	bool BootstrapInMultiplayer { get; }
+ 
+ 	List<ModifierModel> Modifiers { get; }
++
++	string? Language => null;
+ 
+ 	MapPointType MapPointType
+ 	{
+
+$$DIFF src/Core/Nodes/Debug/NSceneBootstrapper.cs
+
+--- a/src\Core\Nodes\Debug\NSceneBootstrapper.cs
++++ b/src\Core\Nodes\Debug\NSceneBootstrapper.cs
+@@ -6,6 +6,7 @@
+ using MegaCrit.Sts2.Core.Assets;
+ using MegaCrit.Sts2.Core.Entities.Players;
+ using MegaCrit.Sts2.Core.Helpers;
++using MegaCrit.Sts2.Core.Localization;
+ using MegaCrit.Sts2.Core.Logging;
+ using MegaCrit.Sts2.Core.Map;
+ using MegaCrit.Sts2.Core.Models;
+@@ -45,6 +46,10 @@
+ 			return;
+ 		}
+ 		IBootstrapSettings settings = (IBootstrapSettings)Activator.CreateInstance(type);
++		if (settings.Language != null)
++		{
++			LocManager.Instance.SetLanguage(settings.Language);
++		}
+ 		PreloadManager.Enabled = settings.DoPreloading;
+ 		string seed = settings.Seed ?? SeedHelper.GetRandomSeed();
+ 		List<ActModel> list = ActModel.GetDefaultList().ToList();
+
+$$DIFF src/Core/Nodes/Screens/CardLibrary/NCardLibrary.cs
+
+--- a/src\Core\Nodes\Screens\CardLibrary\NCardLibrary.cs
++++ b/src\Core\Nodes\Screens\CardLibrary\NCardLibrary.cs
+@@ -287,7 +287,7 @@
+ 		for (int num = 0; num < values.Length; num++)
+ 		{
+ 			CardRarity keyword = values[num];
+-			_specialSearchbarKeywords.Add(keyword.ToString().ToLower(), (CardModel c) => c.Rarity == keyword);
++			_specialSearchbarKeywords.Add(keyword.ToString().ToLowerInvariant(), (CardModel c) => c.Rarity == keyword);
+ 		}
+ 		_ironcladFilter.Connect(Control.SignalName.FocusEntered, Callable.From(delegate
+ 		{
+@@ -707,7 +707,7 @@
+ 			buffer[1] = NSearchBar.RemoveHtmlTags(text);
+ 			string text2 = string.Join(" ", (ReadOnlySpan<string?>)buffer);
+ 			string text3 = NSearchBar.Normalize(text2);
+-			string text4 = _searchBar.Text.ToLower();
++			string text4 = _searchBar.Text.ToLowerInvariant();
+ 			if (_specialSearchbarKeywords.TryGetValue(text4, out Func<CardModel, bool> value2))
+ 			{
+ 				if (!value2(card))
+
+$$DIFF src/Core/Nodes/Screens/CharacterSelect/NActDropdown.cs
+
+--- a/src\Core\Nodes\Screens\CharacterSelect\NActDropdown.cs
++++ b/src\Core\Nodes\Screens\CharacterSelect\NActDropdown.cs
+@@ -41,7 +41,7 @@
+ 			string text = _options[i];
+ 			nDropdownItem.Connect(NDropdownItem.SignalName.Selected, Callable.From<NDropdownItem>(OnDropdownItemSelected));
+ 			DefaultInterpolatedStringHandler defaultInterpolatedStringHandler = new DefaultInterpolatedStringHandler(0, 2);
+-			defaultInterpolatedStringHandler.AppendFormatted(char.ToUpper(text[0]));
++			defaultInterpolatedStringHandler.AppendFormatted(char.ToUpperInvariant(text[0]));
+ 			string text2 = text;
+ 			defaultInterpolatedStringHandler.AppendFormatted(text2.Substring(1, text2.Length - 1));
+ 			nDropdownItem.Text = defaultInterpolatedStringHandler.ToStringAndClear();
+
+$$DIFF src/Core/Nodes/Screens/InspectScreens/NInspectRelicScreen.cs
+
+--- a/src\Core\Nodes\Screens\InspectScreens\NInspectRelicScreen.cs
++++ b/src\Core\Nodes\Screens\InspectScreens\NInspectRelicScreen.cs
+@@ -227,7 +227,7 @@
+ 		else
+ 		{
+ 			_nameLabel.SetTextAutoSize(relicModel.Title.GetFormattedText());
+-			LocString locString = new LocString("gameplay_ui", "RELIC_RARITY." + relicModel.Rarity.ToString().ToUpper());
++			LocString locString = new LocString("gameplay_ui", "RELIC_RARITY." + relicModel.Rarity.ToString().ToUpperInvariant());
+ 			_rarityLabel.SetTextAutoSize(locString.GetFormattedText());
+ 			_relicImage.SelfModulate = Colors.White;
+ 			_description.SetTextAutoSize(relicModel.DynamicDescription.GetFormattedText());
+
+$$DIFF src/Core/Nodes/Screens/MainMenu/NShortSubmenuButton.cs
+
+--- a/src\Core\Nodes\Screens\MainMenu\NShortSubmenuButton.cs
++++ b/src\Core\Nodes\Screens\MainMenu\NShortSubmenuButton.cs
+@@ -36,7 +36,7 @@
+ 
+ 	public static string? GetImagePath(string key)
+ 	{
+-		string imagePath = ImageHelper.GetImagePath("packed/main_menu/submenu_icon_" + key.ToLower() + ".png");
++		string imagePath = ImageHelper.GetImagePath("packed/main_menu/submenu_icon_" + key.ToLowerInvariant() + ".png");
+ 		if (ResourceLoader.Exists(imagePath))
+ 		{
+ 			return imagePath;
+
+$$DIFF src/Core/Nodes/Screens/Settings/NLanguageButton.cs
+
+--- a/src\Core\Nodes\Screens\Settings\NLanguageButton.cs
++++ b/src\Core\Nodes\Screens\Settings\NLanguageButton.cs
+@@ -37,7 +37,7 @@
+ 	{
+ 		Log.Info("Adding Language: " + languageIsoCode);
+ 		isoCode = languageIsoCode;
+-		_label.SetTextAutoSize(new LocString("settings_ui", "LANGUAGE_" + languageIsoCode.ToUpper()).GetRawText());
++		_label.SetTextAutoSize(new LocString("settings_ui", "LANGUAGE_" + languageIsoCode.ToUpperInvariant()).GetRawText());
+ 		_flag.Texture = ResourceLoader.Load<Texture2D>("res://images/ui/settings_screen/flag_" + languageIsoCode + ".png", null, ResourceLoader.CacheMode.Reuse);
+ 		IsSelected = SaveManager.Instance.SettingsSave.Language == isoCode;
+ 		_outline.Visible = IsSelected;
+
+$$DIFF src/Core/Nodes/Screens/Settings/NLanguageDropdown.cs
+
+--- a/src\Core\Nodes\Screens\Settings\NLanguageDropdown.cs
++++ b/src\Core\Nodes\Screens\Settings\NLanguageDropdown.cs
+@@ -85,7 +85,7 @@
+ 
+ 	public static string GetLanguageNameForCode(string languageCode)
+ 	{
+-		if (!_languageCodeToName.TryGetValue(languageCode.ToUpper(), out string value))
++		if (!_languageCodeToName.TryGetValue(languageCode.ToUpperInvariant(), out string value))
+ 		{
+ 			throw new InvalidOperationException("Tried to get language name for code " + languageCode + " but it doesn't exist!");
+ 		}
+
+$$DIFF src/Core/Nodes/Screens/StatsScreen/NAchievementHolder.cs
+
+--- a/src\Core\Nodes\Screens\StatsScreen\NAchievementHolder.cs
++++ b/src\Core\Nodes\Screens\StatsScreen\NAchievementHolder.cs
+@@ -68,16 +68,16 @@
+ 
+ 	public static string GetPathForAchievement(Enum achievement)
+ 	{
+-		string text = StringHelper.SnakeCase(achievement.ToString()).ToLower();
++		string text = StringHelper.SnakeCase(achievement.ToString()).ToLowerInvariant();
+ 		return ImageHelper.GetImagePath("packed/achievements/unlocked/" + text + ".png");
+ 	}
+ 
+ 	public void RefreshUnlocked()
+ 	{
+ 		IsUnlocked = AchievementsUtil.IsUnlocked(_achievement);
+-		string text = StringHelper.SnakeCase(_achievement.ToString()).ToLower();
++		string text = StringHelper.SnakeCase(_achievement.ToString()).ToLowerInvariant();
+ 		_icon.Texture = PreloadManager.Cache.GetTexture2D(GetPathForAchievement(_achievement));
+-		text = text.ToUpper();
++		text = text.ToUpperInvariant();
+ 		if (IsUnlocked)
+ 		{
+ 			_infoLabel.Text = "[b][gold]" + new LocString("achievements", text + ".title").GetRawText() + "[/gold][/b]\n" + new LocString("achievements", text + ".description").GetFormattedText();
+
+$$DIFF src/Core/Nodes/Screens/Timeline/NTimelineScreen.cs
+
+--- a/src\Core\Nodes\Screens\Timeline\NTimelineScreen.cs
++++ b/src\Core\Nodes\Screens\Timeline\NTimelineScreen.cs
+@@ -102,6 +102,19 @@
+ 	{
+ 		ResetScreen();
+ 		DisableInput();
++		SerializableEpoch serializableEpoch = SaveManager.Instance.Progress.Epochs.FirstOrDefault((SerializableEpoch e) => e.Id == EpochModel.GetId<NeowEpoch>());
++		bool flag = serializableEpoch == null;
++		bool flag2 = flag;
++		if (!flag2)
++		{
++			EpochState state = serializableEpoch.State;
++			bool flag3 = (uint)(state - 1) <= 1u;
++			flag2 = flag3;
++		}
++		if (flag2)
++		{
++			SaveManager.Instance.Progress.ObtainEpoch(EpochModel.GetId<NeowEpoch>());
++		}
+ 		if (SaveManager.Instance.IsNeowDiscovered())
+ 		{
+ 			TaskHelper.RunSafely(FirstTimeLogic());
+
+$$DIFF src/Core/Nodes/Vfx/Backgrounds/NKaiserCrabBossBackground.cs
+
+--- a/src\Core\Nodes\Vfx\Backgrounds\NKaiserCrabBossBackground.cs
++++ b/src\Core\Nodes\Vfx\Backgrounds\NKaiserCrabBossBackground.cs
+@@ -50,7 +50,7 @@
+ 
+ 	public async Task PlayAttackAnim(ArmSide side, string animation, float duration)
+ 	{
+-		string text = side.ToString().ToLower();
++		string text = side.ToString().ToLowerInvariant();
+ 		MegaAnimationState animationState = _animController.GetAnimationState();
+ 		animationState.SetAnimation(text + "/" + animation, loop: false, (side == ArmSide.Left) ? 1 : 2);
+ 		animationState.SetAnimation("reactions/attack_" + text, loop: false, 3);
+@@ -60,7 +60,7 @@
+ 
+ 	public void PlayHurtAnim(ArmSide side)
+ 	{
+-		string text = side.ToString().ToLower();
++		string text = side.ToString().ToLowerInvariant();
+ 		MegaAnimationState animationState = _animController.GetAnimationState();
+ 		animationState.SetAnimation("reactions/hurt_" + text, loop: false, 3);
+ 		if (side == ArmSide.Left)
+@@ -88,7 +88,7 @@
+ 
+ 	public void PlayArmDeathAnim(ArmSide side)
+ 	{
+-		string text = side.ToString().ToLower();
++		string text = side.ToString().ToLowerInvariant();
+ 		MegaAnimationState animationState = _animController.GetAnimationState();
+ 		animationState.SetAnimation("reactions/hurt_" + text, loop: false, 3);
+ 		if (side == ArmSide.Left)
+
+$$DIFF src/Core/Platform/Null/NullPlatformUtilStrategy.cs
+
+--- a/src\Core\Platform\Null\NullPlatformUtilStrategy.cs
++++ b/src\Core\Platform\Null\NullPlatformUtilStrategy.cs
+@@ -110,7 +110,7 @@
+ 		{
+ 			return cultureInfo.ThreeLetterISOLanguageName;
+ 		}
+-		string text = cultureInfo.Name.ToLower();
++		string text = cultureInfo.Name.ToLowerInvariant();
+ 		text = text.Replace('-', '_');
+ 		if (text.StartsWith("zh"))
+ 		{
+
+$$DIFF src/Core/Saves/Managers/ProgressSaveManager.cs
+
+--- a/src\Core\Saves\Managers\ProgressSaveManager.cs
++++ b/src\Core\Saves\Managers\ProgressSaveManager.cs
+@@ -9,7 +9,6 @@
+ using MegaCrit.Sts2.Core.Logging;
+ using MegaCrit.Sts2.Core.Map;
+ using MegaCrit.Sts2.Core.Models;
+-using MegaCrit.Sts2.Core.Models.Acts;
+ using MegaCrit.Sts2.Core.Models.Characters;
+ using MegaCrit.Sts2.Core.Models.Events;
+ using MegaCrit.Sts2.Core.Nodes;
+@@ -497,23 +496,9 @@
+ 		}
+ 	}
+ 
+-	private void CheckUnderdocksEpoch(Player localPlayer)
+-	{
+-		HashSet<ModelId> encountersWon = (from e in Progress.EncounterStats.Values
+-			where e.FightStats.Any((FightStats f) => f.Wins > 0)
+-			select e.Id).ToHashSet();
+-		int num = ModelDb.Act<Overgrowth>().AllBossEncounters.Count();
+-		int num2 = ModelDb.Act<Overgrowth>().AllBossEncounters.Count((EncounterModel e) => encountersWon.Contains(e.Id));
+-		EpochModel epoch = EpochModel.Get<UnderdocksEpoch>();
+-		if (num2 >= num)
+-		{
+-			TryObtainEpochMidRun(epoch, localPlayer);
+-		}
+-	}
+-
+ 	private void ObtainCharUnlockEpoch(Player localPlayer, int act)
+ 	{
+-		string text = localPlayer.Character.Id.Entry.ToUpper();
++		string text = localPlayer.Character.Id.Entry.ToUpperInvariant();
+ 		EpochModel epochModel = null;
+ 		switch (act)
+ 		{
+@@ -602,7 +587,6 @@
+ 		{
+ 			ObtainCharUnlockEpoch(localPlayer, runState.CurrentActIndex);
+ 			CheckFifteenBossesDefeatedEpoch(localPlayer);
+-			CheckUnderdocksEpoch(localPlayer);
+ 		}
+ 		else if (room.RoomType == RoomType.Elite)
+ 		{
+
+$$DIFF src/Core/Saves/SaveManager.cs
+
+--- a/src\Core\Saves\SaveManager.cs
++++ b/src\Core\Saves\SaveManager.cs
+@@ -5,6 +5,7 @@
+ using System.Linq;
+ using System.Text.Json;
+ using System.Threading.Tasks;
++using MegaCrit.Sts2.Core.Debug;
+ using MegaCrit.Sts2.Core.Entities.Players;
+ using MegaCrit.Sts2.Core.Logging;
+ using MegaCrit.Sts2.Core.Models;
+@@ -49,6 +50,28 @@
+ 	private int? _currentProfileId;
+ 
+ 	public const int totalAgnosticUnlocks = 18;
++
++	private static readonly string[] _agnosticEpochUnlockOrder = new string[18]
++	{
++		EpochModel.GetId<Colorless1Epoch>(),
++		EpochModel.GetId<Relic1Epoch>(),
++		EpochModel.GetId<Potion1Epoch>(),
++		EpochModel.GetId<UnderdocksEpoch>(),
++		EpochModel.GetId<Colorless2Epoch>(),
++		EpochModel.GetId<Relic2Epoch>(),
++		EpochModel.GetId<Potion2Epoch>(),
++		EpochModel.GetId<Act2BEpoch>(),
++		EpochModel.GetId<Colorless3Epoch>(),
++		EpochModel.GetId<Relic3Epoch>(),
++		EpochModel.GetId<Act3BEpoch>(),
++		EpochModel.GetId<Colorless4Epoch>(),
++		EpochModel.GetId<Relic4Epoch>(),
++		EpochModel.GetId<Event1Epoch>(),
++		EpochModel.GetId<Colorless5Epoch>(),
++		EpochModel.GetId<Relic5Epoch>(),
++		EpochModel.GetId<Event2Epoch>(),
++		EpochModel.GetId<Event3Epoch>()
++	};
+ 
+ 	public static SaveManager Instance
+ 	{
+@@ -688,13 +711,42 @@
+ 		return Progress.EnemyStats.Values.Sum((EnemyStats enemy) => enemy.TotalWins);
+ 	}
+ 
++	public IEnumerable<SerializableEpoch> GetDiscoveredEpochs()
++	{
++		HashSet<string> satisfiedEpochIds = new HashSet<string>(from e in Progress.Epochs
++			where e.State != EpochState.NotObtained
++			select e.Id);
++		Dictionary<string, int> unlockOrderIndex = new Dictionary<string, int>();
++		for (int num = 0; num < _agnosticEpochUnlockOrder.Length; num++)
++		{
++			unlockOrderIndex[_agnosticEpochUnlockOrder[num]] = num;
++		}
++		return Progress.Epochs.Where(delegate(SerializableEpoch e)
++		{
++			EpochState state = e.State;
++			if ((uint)(state - 3) > 1u)
++			{
++				return false;
++			}
++			if (!unlockOrderIndex.TryGetValue(e.Id, out var value))
++			{
++				return true;
++			}
++			for (int i = 0; i < value; i++)
++			{
++				if (!satisfiedEpochIds.Contains(_agnosticEpochUnlockOrder[i]))
++				{
++					SentryService.CaptureMessage("Out-of-order epoch discovery. Epoch " + e.Id + " discovered before " + _agnosticEpochUnlockOrder[i]);
++					return false;
++				}
++			}
++			return true;
++		});
++	}
++
+ 	public int GetDiscoveredEpochCount()
+ 	{
+-		return Progress.Epochs.Count(delegate(SerializableEpoch epoch)
+-		{
+-			EpochState state = epoch.State;
+-			return (uint)(state - 3) <= 1u;
+-		});
++		return GetDiscoveredEpochs().Count();
+ 	}
+ 
+ 	public bool IsNeowDiscovered()
+@@ -725,28 +777,12 @@
+ 
+ 	private string? GetEpochIdForUnlock()
+ 	{
+-		return Progress.TotalUnlocks switch
+-		{
+-			1 => EpochModel.GetId<Colorless1Epoch>(), 
+-			2 => EpochModel.GetId<Relic1Epoch>(), 
+-			3 => EpochModel.GetId<Potion1Epoch>(), 
+-			4 => EpochModel.GetId<UnderdocksEpoch>(), 
+-			5 => EpochModel.GetId<Colorless2Epoch>(), 
+-			6 => EpochModel.GetId<Relic2Epoch>(), 
+-			7 => EpochModel.GetId<Potion2Epoch>(), 
+-			8 => EpochModel.GetId<Act2BEpoch>(), 
+-			9 => EpochModel.GetId<Colorless3Epoch>(), 
+-			10 => EpochModel.GetId<Relic3Epoch>(), 
+-			11 => EpochModel.GetId<Act3BEpoch>(), 
+-			12 => EpochModel.GetId<Colorless4Epoch>(), 
+-			13 => EpochModel.GetId<Relic4Epoch>(), 
+-			14 => EpochModel.GetId<Event1Epoch>(), 
+-			15 => EpochModel.GetId<Colorless5Epoch>(), 
+-			16 => EpochModel.GetId<Relic5Epoch>(), 
+-			17 => EpochModel.GetId<Event2Epoch>(), 
+-			18 => EpochModel.GetId<Event3Epoch>(), 
+-			_ => null, 
+-		};
++		int num = Progress.TotalUnlocks - 1;
++		if (num < 0 || num >= _agnosticEpochUnlockOrder.Length)
++		{
++			return null;
++		}
++		return _agnosticEpochUnlockOrder[num];
+ 	}
+ 
+ 	public bool IsCompendiumAvailable()
+
+$$DIFF src/Core/Timeline/EpochModel.cs
+
+--- a/src\Core\Timeline\EpochModel.cs
++++ b/src\Core\Timeline\EpochModel.cs
+@@ -111,7 +111,7 @@
+ 			{
+ 				return null;
+ 			}
+-			return new LocString("epochs", "STORY_" + StoryId.ToUpper()).GetRawText();
++			return new LocString("epochs", "STORY_" + StoryId.ToUpperInvariant()).GetRawText();
+ 		}
+ 	}
+ 
+@@ -127,11 +127,11 @@
+ 
+ 	public Texture2D Portrait => ResourceLoader.Load<Texture2D>(PackedPortraitPath, null, ResourceLoader.CacheMode.Reuse);
+ 
+-	public string PackedPortraitPath => ImageHelper.GetImagePath("atlases/epoch_atlas.sprites/" + Id.ToLower() + ".tres");
++	public string PackedPortraitPath => ImageHelper.GetImagePath("atlases/epoch_atlas.sprites/" + Id.ToLowerInvariant() + ".tres");
+ 
+ 	public Texture2D BigPortrait => ResourceLoader.Load<Texture2D>(BigPortraitPath, null, ResourceLoader.CacheMode.Reuse);
+ 
+-	public string BigPortraitPath => ImageHelper.GetImagePath("timeline/epoch_portraits/" + Id.ToLower() + ".png");
++	public string BigPortraitPath => ImageHelper.GetImagePath("timeline/epoch_portraits/" + Id.ToLowerInvariant() + ".png");
+ 
+ 	public int ChapterIndex
+ 	{
